@@ -55,13 +55,26 @@ Check `.env` file has:
 
 All credentials are already configured!
 
-### 3. Initialize Database
+### 3. Initialize Database with Alembic Migrations
 
-The database tables are created automatically on first run, but you can manually create them:
+GETIVA uses Alembic for database schema versioning. Apply migrations to set up the database:
 
+```bash
+alembic upgrade head
+```
+
+**First-time setup:**
+1. Creates all tables (users, students, recruiters, applications, payments)
+2. Creates indexes and foreign keys
+3. Initializes ENUM types
+4. Updates migration version tracking
+
+**Alternative (manual creation):** If Alembic is not available:
 ```bash
 python -c "from database import engine, Base; Base.metadata.create_all(bind=engine)"
 ```
+
+For detailed migration management, see [MIGRATIONS.md](MIGRATIONS.md).
 
 ### 4. Start Backend Server
 
@@ -236,6 +249,44 @@ ENVIRONMENT=development
 ```env
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,https://yourfrontend.com
 ```
+
+## 🔄 Database Migrations with Alembic
+
+GETIVA uses Alembic for version-controlled database schema management.
+
+### Common Alembic Commands
+
+```bash
+# Apply all pending migrations
+alembic upgrade head
+
+# Create new migration (auto-generates from model changes)
+alembic revision --autogenerate -m "Add new field to students"
+
+# Rollback last migration
+alembic downgrade -1
+
+# Check current migration version
+alembic current
+
+# View migration history
+alembic history
+```
+
+### Making Schema Changes
+
+1. **Update the model** in `models.py`
+2. **Generate migration**:
+   ```bash
+   alembic revision --autogenerate -m "Description"
+   ```
+3. **Review** the generated file in `alembic/versions/`
+4. **Apply migration**:
+   ```bash
+   alembic upgrade head
+   ```
+
+For comprehensive migration guide, see [MIGRATIONS.md](MIGRATIONS.md).
 
 ## 📊 Database Schema Overview
 
