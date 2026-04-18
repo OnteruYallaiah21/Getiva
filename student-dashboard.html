@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GETIVA Student Dashboard</title>
+    <link rel="stylesheet" href="student-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="student-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-student">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="#00E5FF"/>
+                        <text x="16" y="22" font-size="20" font-weight="bold" text-anchor="middle" fill="#0B0B0B">G</text>
+                    </svg>
+                    <span>GETIVA</span>
+                </div>
+                <p class="student-label">Student Portal</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" data-section="overview" class="nav-link active">
+                    <span class="icon">📊</span>
+                    <span>Overview</span>
+                </a>
+                <a href="#" data-section="applications" class="nav-link">
+                    <span class="icon">📝</span>
+                    <span>Applications</span>
+                </a>
+                <a href="#" data-section="profile" class="nav-link">
+                    <span class="icon">👤</span>
+                    <span>Profile</span>
+                </a>
+                <a href="#" data-section="resume" class="nav-link">
+                    <span class="icon">📄</span>
+                    <span>Resume</span>
+                </a>
+                <a href="#" data-section="interviews" class="nav-link">
+                    <span class="icon">📅</span>
+                    <span>Interviews</span>
+                </a>
+                <a href="#" data-section="progress" class="nav-link">
+                    <span class="icon">📈</span>
+                    <span>Progress</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 id="pageTitle">Overview</h1>
+                </div>
+                <div class="top-bar-right">
+                    <button class="notification-btn">🔔</button>
+                    <div class="user-profile">
+                        <span id="userName">Student Name</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Overview Section -->
+                <section id="overview-section" class="section active">
+                    <div class="welcome-card">
+                        <div class="welcome-content">
+                            <h2>Welcome, <span id="welcomeName">Student</span>!</h2>
+                            <p>Track your job applications and monitor your progress toward landing your dream job.</p>
+                        </div>
+                        <div class="welcome-stats">
+                            <div class="stat">
+                                <div class="stat-number" id="totalApps">0</div>
+                                <div class="stat-text">Applications</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number" id="interviewCount">0</div>
+                                <div class="stat-text">Interviews</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number" id="offerCount">0</div>
+                                <div class="stat-text">Offers</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <a href="#" data-section="applications" class="action-card">
+                            <div class="action-icon">📝</div>
+                            <div class="action-info">
+                                <h3>View Applications</h3>
+                                <p>Track all your job applications</p>
+                            </div>
+                        </a>
+                        <a href="#" data-section="resume" class="action-card">
+                            <div class="action-icon">📄</div>
+                            <div class="action-info">
+                                <h3>Upload Resume</h3>
+                                <p>Update your resume for applications</p>
+                            </div>
+                        </a>
+                        <a href="#" data-section="interviews" class="action-card">
+                            <div class="action-icon">📅</div>
+                            <div class="action-info">
+                                <h3>Schedule</h3>
+                                <p>Manage interview schedules</p>
+                            </div>
+                        </a>
+                        <a href="#" data-section="progress" class="action-card">
+                            <div class="action-icon">📈</div>
+                            <div class="action-info">
+                                <h3>Progress</h3>
+                                <p>View your success metrics</p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="overview-cards">
+                        <div class="info-card">
+                            <h3>Application Status</h3>
+                            <div class="status-summary">
+                                <div class="status-item">
+                                    <span class="status-label">Applied</span>
+                                    <span class="status-count" id="appliedCount">0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Interview</span>
+                                    <span class="status-count" id="interviewStatusCount">0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Offer</span>
+                                    <span class="status-count" id="offerStatusCount">0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Rejected</span>
+                                    <span class="status-count" id="rejectedCount">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <h3>Success Rate</h3>
+                            <div class="success-metric">
+                                <div class="success-circle">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#333" stroke-width="4"/>
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#00E5FF" stroke-width="4"
+                                                stroke-dasharray="282.7" stroke-dashoffset="141.35" id="successCircle"/>
+                                    </svg>
+                                    <div class="success-text">
+                                        <span class="success-value" id="successRate">0</span>
+                                        <span class="success-label">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-card full-width">
+                            <h3>Latest Activity</h3>
+                            <div class="activity-list" id="activityList">
+                                <p class="empty">Loading activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Applications Section -->
+                <section id="applications-section" class="section">
+                    <div class="section-header">
+                        <h2>My Applications</h2>
+                        <div class="filter-controls">
+                            <select id="statusFilter" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="applied">Applied</option>
+                                <option value="interview">Interview</option>
+                                <option value="offer">Offer</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <input type="text" id="searchApplications" class="search-input" placeholder="Search companies...">
+                        </div>
+                    </div>
+
+                    <div class="applications-grid" id="applicationsGrid">
+                        <div class="empty">Loading applications...</div>
+                    </div>
+                </section>
+
+                <!-- Profile Section -->
+                <section id="profile-section" class="section">
+                    <div class="section-header">
+                        <h2>My Profile</h2>
+                    </div>
+
+                    <div class="profile-card">
+                        <form id="profileForm">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="fullName" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="profileEmail" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="tel" id="phone">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Professional Summary</label>
+                                <textarea id="summary" rows="4"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Profile</button>
+                                <button type="button" class="btn btn-secondary" onclick="resetProfileForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Resume Section -->
+                <section id="resume-section" class="section">
+                    <div class="section-header">
+                        <h2>Resume Management</h2>
+                    </div>
+
+                    <div class="resume-container">
+                        <div class="upload-area" id="uploadArea">
+                            <svg class="upload-icon" viewBox="0 0 48 48">
+                                <path d="M24 4v26M10 20l14-14 14 14M8 44h32" stroke="#00E5FF" stroke-width="2" fill="none"/>
+                            </svg>
+                            <h3>Drop your resume here</h3>
+                            <p>or click to browse (PDF, DOC, DOCX)</p>
+                            <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display: none;">
+                        </div>
+
+                        <div id="resumeInfo" class="resume-info" style="display: none;">
+                            <div class="resume-item">
+                                <div class="resume-details">
+                                    <div class="resume-name" id="resumeName">resume.pdf</div>
+                                    <div class="resume-meta">
+                                        <span id="resumeSize">1.2 MB</span>
+                                        <span id="resumeDate">Updated: Jan 15, 2024</span>
+                                    </div>
+                                </div>
+                                <div class="resume-actions">
+                                    <a href="#" id="downloadResume" class="action-link">Download</a>
+                                    <button type="button" class="action-link delete" onclick="deleteResume()">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Interviews Section -->
+                <section id="interviews-section" class="section">
+                    <div class="section-header">
+                        <h2>Interview Schedule</h2>
+                        <button class="btn btn-primary" onclick="openInterviewModal()">+ Schedule Interview</button>
+                    </div>
+
+                    <div id="interviewsList" class="interviews-list">
+                        <div class="empty">No scheduled interviews</div>
+                    </div>
+                </section>
+
+                <!-- Progress Section -->
+                <section id="progress-section" class="section">
+                    <div class="section-header">
+                        <h2>Your Progress</h2>
+                    </div>
+
+                    <div class="progress-grid">
+                        <div class="progress-card">
+                            <h3>Applications Over Time</h3>
+                            <canvas id="applicationsChart"></canvas>
+                        </div>
+                        <div class="progress-card">
+                            <h3>Status Distribution</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stats-detailed">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Applications</div>
+                            <div class="stat-value" id="totalApplications">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Interviews Scheduled</div>
+                            <div class="stat-value" id="totalInterviews">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Job Offers</div>
+                            <div class="stat-value" id="totalOffers">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Success Rate</div>
+                            <div class="stat-value" id="displaySuccessRate">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="achievements">
+                        <h3>Milestones</h3>
+                        <div class="milestone-list">
+                            <div class="milestone" id="milestone1">
+                                <div class="milestone-icon">✓</div>
+                                <div class="milestone-text">
+                                    <strong>First Application</strong>
+                                    <p>Applied to your first job</p>
+                                </div>
+                            </div>
+                            <div class="milestone" id="milestone2">
+                                <div class="milestone-icon">✓</div>
+                                <div class="milestone-text">
+                                    <strong>First Interview</strong>
+                                    <p>Got your first interview!</p>
+                                </div>
+                            </div>
+                            <div class="milestone" id="milestone3">
+                                <div class="milestone-icon">✓</div>
+                                <div class="milestone-text">
+                                    <strong>Job Offer</strong>
+                                    <p>Received a job offer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Interview Modal -->
+    <div id="interviewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Interview</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="interviewForm">
+                <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" id="interviewCompany" required>
+                </div>
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" id="interviewPosition" required>
+                </div>
+                <div class="form-group">
+                    <label>Date & Time</label>
+                    <input type="datetime-local" id="interviewDateTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Interview Type</label>
+                    <select id="interviewType">
+                        <option value="phone">Phone</option>
+                        <option value="video">Video</option>
+                        <option value="in-person">In-Person</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="interviewNotes" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Schedule</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeInterviewModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Detail Modal -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalCompanyName">Company Name</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div id="applicationDetails" class="modal-body">
+                <!-- Details will be filled by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="student-script.js"></script>
+</body>
+</html>
