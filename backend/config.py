@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Supabase (optional for development)
     SUPABASE_URL: str = "https://example.supabase.co"
-    SUPABASE_API_KEY: str = "your_supabase_api_key"
+    SUPABASE_KEY: str = "your_supabase_key"
     SUPABASE_BUCKET: str = "resumes"
 
     # CORS

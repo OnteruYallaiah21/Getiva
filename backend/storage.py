@@ -8,7 +8,7 @@ class SupabaseStorage:
     """Handle file storage operations with Supabase."""
 
     def __init__(self):
-        self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_API_KEY)
+        self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         self.bucket_name = settings.SUPABASE_BUCKET
 
     def upload_file(self, file_bytes: bytes, file_name: str, student_id: str) -> str:
