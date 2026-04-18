@@ -1,14 +1,55 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from ..database import get_db
 from ..models import User, Student, Recruiter, UserRole
 from ..schemas import UserRegister, UserLogin, Token, UserResponse
-from ..auth import hash_password, verify_password, create_access_token
+from ..auth import hash_password, verify_password, create_access_token, decode_token
 from ..config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+def get_token(authorization: str = Header(None)):
+    """Extract token from Authorization header."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid token format")
+
+    return parts[1]
+
+
+def get_current_user(token: str = Depends(get_token), db: Session = Depends(get_db)):
+    """Get current authenticated user from token."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    token_data = decode_token(token)
+    if token_data is None:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.username == token_data.username).first()
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+def require_role(*roles: UserRole):
+    """Dependency to check user role."""
+    async def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+
+    return role_checker
 
 
 @router.post("/register", response_model=UserResponse)
@@ -110,44 +151,3 @@ def refresh_token(current_user: dict = Depends(get_current_user)):
     }
 
 
-def get_current_user(token: str = Depends(get_token), db: Session = Depends(get_db)):
-    """Get current authenticated user from token."""
-    from auth import decode_token
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    token_data = decode_token(token)
-    if token_data is None:
-        raise credentials_exception
-
-    user = db.query(User).filter(User.username == token_data.username).first()
-    if user is None:
-        raise credentials_exception
-
-    return user
-
-
-def get_token(authorization: str = None):
-    """Extract token from Authorization header."""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Invalid token format")
-
-    return parts[1]
-
-
-def require_role(*roles: UserRole):
-    """Dependency to check user role."""
-    async def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return current_user
-
-    return role_checker
