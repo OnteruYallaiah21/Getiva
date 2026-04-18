@@ -71,6 +71,55 @@ app.include_router(analytics.router)
 app.include_router(files.router)
 
 
+# Custom OpenAPI schema for Swagger documentation
+def custom_openapi():
+    """Generate custom OpenAPI schema for Swagger documentation."""
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    from fastapi.openapi.utils import get_openapi
+
+    openapi_schema = get_openapi(
+        title="GETIVA API",
+        version=settings.APP_VERSION,
+        description="""
+# GETIVA - Job Application Tracking Platform API
+
+Complete REST API for job application tracking and consultancy management.
+
+## Authentication
+All protected endpoints require JWT token in Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+## User Roles
+- **ADMIN**: Full system access, user management, analytics
+- **RECRUITER**: Create and manage applications, view analytics
+- **STUDENT**: Track applications, upload documents, manage payments
+
+## Key Features
+- User authentication with JWT
+- Role-based access control
+- Application tracking with status updates
+- Payment management
+- File uploads and storage
+- Analytics and reporting
+        """,
+        routes=app.routes,
+    )
+
+    openapi_schema["info"]["x-logo"] = {
+        "url": "/api/logo",
+        "altText": "GETIVA Logo"
+    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
