@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GETIVA - Apply Smarter. Get Hired Faster.</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#00E5FF"/>
+                    <text x="16" y="22" font-size="20" font-weight="bold" text-anchor="middle" fill="#0B0B0B">G</text>
+                </svg>
+                <span>GETIVA</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#roles">Roles</a></li>
+                <li><a href="#analytics">Analytics</a></li>
+                <li><a href="#testimonials">Testimonials</a></li>
+            </ul>
+            <button class="nav-cta" id="signInBtn">Sign In</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="grid-background"></div>
+            <div class="gradient-blur blur-1"></div>
+            <div class="gradient-blur blur-2"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">Apply Smarter.<br>Get Hired Faster.</h1>
+            <p class="hero-subtitle">We apply. You succeed.</p>
+            <p class="hero-description">Automate job applications, track progress in real-time, and land your dream job with GETIVA's intelligent application platform.</p>
+            <div class="hero-cta">
+                <button class="btn btn-primary glow">Get Started</button>
+                <button class="btn btn-secondary">Book a Demo</button>
+            </div>
+            <p class="hero-meta">🚀 Join 500+ students and 50+ recruiters</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2>Powerful Features</h2>
+            <p>Everything you need to succeed</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="#00E5FF" stroke-width="2"/>
+                        <path d="M16 24L22 30L34 18" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>Job Application Automation</h3>
+                <p>Apply to hundreds of jobs automatically. Our AI matches your profile to the best opportunities.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect x="8" y="12" width="32" height="24" rx="2" stroke="#FF6A00" stroke-width="2"/>
+                        <path d="M16 12V8M32 12V8M8 20H40" stroke="#FF6A00" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>Real-Time Tracking</h3>
+                <p>Track every application status, interview invitation, and offer in one unified dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M8 24C8 15.16 15.16 8 24 8C32.84 8 40 15.16 40 24C40 32.84 32.84 40 24 40C15.16 40 8 32.84 8 24Z" stroke="#00E5FF" stroke-width="2"/>
+                        <path d="M24 14V24L32 32" stroke="#00E5FF" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>Recruiter Performance</h3>
+                <p>Monitor recruiter metrics, success rates, and productivity in real-time analytics.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M12 16C12 13.79 13.79 12 16 12H32C34.21 12 36 13.79 36 16V36H12V16Z" stroke="#FF6A00" stroke-width="2"/>
+                        <path d="M20 20H28M20 26H28M20 32H24" stroke="#FF6A00" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>Student Dashboard</h3>
+                <p>Comprehensive view of all applications, documents, and interview schedules in one place.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M8 28L16 20L24 28L40 12" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="8" y="8" width="32" height="32" rx="2" stroke="#00E5FF" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h3>Advanced Analytics</h3>
+                <p>Deep insights into application trends, success rates, and performance metrics.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <path d="M24 8C32.8366 8 40 15.1634 40 24C40 32.8366 32.8366 40 24 40C15.1634 40 8 32.8366 8 24C8 15.1634 15.1634 8 24 8Z" stroke="#FF6A00" stroke-width="2"/>
+                        <path d="M24 14V24L30.8 30.8" stroke="#FF6A00" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>Role-Based Access</h3>
+                <p>Secure, granular permissions for admins, recruiters, and students with full audit logs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview Section -->
+    <section id="dashboard" class="dashboard-preview">
+        <div class="section-header">
+            <h2>Unified Dashboard</h2>
+            <p>Everything at a glance</p>
+        </div>
+        <div class="dashboard-container">
+            <div class="dashboard-mockup">
+                <!-- Header -->
+                <div class="dashboard-header">
+                    <div class="header-left">
+                        <h3>Applications</h3>
+                        <p>View all active applications</p>
+                    </div>
+                    <div class="header-right">
+                        <input type="text" placeholder="Search..." class="search-input">
+                        <button class="btn-icon">⚙️</button>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value">47</div>
+                        <div class="stat-label">Total Applications</div>
+                        <div class="stat-change">↑ 12 this week</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Interviews</div>
+                        <div class="stat-change">→ 2 pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Offers</div>
+                        <div class="stat-change">↑ 1 new</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">18%</div>
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-change">vs 12% avg</div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="dashboard-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Position</th>
+                                <th>Applied</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="company-cell">
+                                    <span class="company-badge">G</span>
+                                    Google
+                                </td>
+                                <td>Senior Engineer</td>
+                                <td>2 days ago</td>
+                                <td><span class="status-badge status-interview">Interview</span></td>
+                                <td><a href="#" class="action-link">View →</a></td>
+                            </tr>
+                            <tr>
+                                <td class="company-cell">
+                                    <span class="company-badge">A">A</span>
+                                    Amazon
+                                </td>
+                                <td>Frontend Dev</td>
+                                <td>5 days ago</td>
+                                <td><span class="status-badge status-applied">Applied</span></td>
+                                <td><a href="#" class="action-link">View →</a></td>
+                            </tr>
+                            <tr>
+                                <td class="company-cell">
+                                    <span class="company-badge">M">M</span>
+                                    Microsoft
+                                </td>
+                                <td>Product Manager</td>
+                                <td>1 day ago</td>
+                                <td><span class="status-badge status-offer">Offer</span></td>
+                                <td><a href="#" class="action-link">View →</a></td>
+                            </tr>
+                            <tr>
+                                <td class="company-cell">
+                                    <span class="company-badge">M">M</span>
+                                    Meta
+                                </td>
+                                <td>Data Engineer</td>
+                                <td>3 days ago</td>
+                                <td><span class="status-badge status-applied">Applied</span></td>
+                                <td><a href="#" class="action-link">View →</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Role-Based System Section -->
+    <section id="roles" class="roles">
+        <div class="section-header">
+            <h2>Built for Everyone</h2>
+            <p>Tailored experiences for each role</p>
+        </div>
+        <div class="roles-grid">
+            <div class="role-card role-student">
+                <div class="role-icon">👨‍🎓</div>
+                <h3>Students</h3>
+                <p>Apply to opportunities without lifting a finger. Track all your applications in one dashboard.</p>
+                <ul class="role-features">
+                    <li>✓ View all applications</li>
+                    <li>✓ Download resumes</li>
+                    <li>✓ Track progress</li>
+                    <li>✓ Interview schedule</li>
+                </ul>
+            </div>
+            <div class="role-card role-recruiter">
+                <div class="role-icon">🧑‍💼</div>
+                <h3>Recruiters</h3>
+                <p>Manage applications, apply on behalf of students, and track success metrics.</p>
+                <ul class="role-features">
+                    <li>✓ Create applications</li>
+                    <li>✓ Upload resumes</li>
+                    <li>✓ Manage students</li>
+                    <li>✓ Performance tracking</li>
+                </ul>
+            </div>
+            <div class="role-card role-admin">
+                <div class="role-icon">⚙️</div>
+                <h3>Administrators</h3>
+                <p>Full system control with comprehensive reporting and financial management tools.</p>
+                <ul class="role-features">
+                    <li>✓ User management</li>
+                    <li>✓ Payment tracking</li>
+                    <li>✓ Full analytics</li>
+                    <li>✓ System settings</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section id="analytics" class="analytics">
+        <div class="section-header">
+            <h2>Deep Analytics</h2>
+            <p>Insights that drive success</p>
+        </div>
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h4>Applications Timeline</h4>
+                <div class="chart-container">
+                    <svg class="line-chart" viewBox="0 0 400 150" preserveAspectRatio="xMidYMid meet">
+                        <!-- Grid -->
+                        <line x1="40" y1="130" x2="380" y2="130" stroke="#333" stroke-width="1"/>
+                        <line x1="40" y1="20" x2="40" y2="130" stroke="#333" stroke-width="1"/>
+
+                        <!-- Line with glow -->
+                        <defs>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- Data line -->
+                        <polyline points="50,110 100,90 150,70 200,85 250,50 300,35 350,45"
+                                  stroke="#00E5FF" stroke-width="3" fill="none" filter="url(#glow)"/>
+
+                        <!-- Fill area -->
+                        <polygon points="50,110 100,90 150,70 200,85 250,50 300,35 350,45 350,130 50,130"
+                                 fill="#00E5FF" opacity="0.1"/>
+
+                        <!-- Points -->
+                        <circle cx="50" cy="110" r="4" fill="#00E5FF"/>
+                        <circle cx="100" cy="90" r="4" fill="#00E5FF"/>
+                        <circle cx="150" cy="70" r="4" fill="#00E5FF"/>
+                        <circle cx="200" cy="85" r="4" fill="#00E5FF"/>
+                        <circle cx="250" cy="50" r="4" fill="#00E5FF"/>
+                        <circle cx="300" cy="35" r="4" fill="#00E5FF"/>
+                        <circle cx="350" cy="45" r="4" fill="#00E5FF"/>
+                    </svg>
+                </div>
+                <div class="chart-legend">
+                    <span>Last 30 days</span>
+                    <span class="highlight">↑ 23% increase</span>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Recruiter Performance</h4>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        <div class="bar-row">
+                            <div class="bar-label">Sarah</div>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 85%; background: linear-gradient(90deg, #FF6A00, #FFB84D);"></div>
+                            </div>
+                            <div class="bar-value">42</div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">James</div>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 72%; background: linear-gradient(90deg, #FF6A00, #FFB84D);"></div>
+                            </div>
+                            <div class="bar-value">36</div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">Maria</div>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 65%; background: linear-gradient(90deg, #FF6A00, #FFB84D);"></div>
+                            </div>
+                            <div class="bar-value">33</div>
+                        </div>
+                        <div class="bar-row">
+                            <div class="bar-label">David</div>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 58%; background: linear-gradient(90deg, #FF6A00, #FFB84D);"></div>
+                            </div>
+                            <div class="bar-value">29</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <span>Applications created</span>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Success Rate by Industry</h4>
+                <div class="chart-container">
+                    <div class="pie-chart">
+                        <svg viewBox="0 0 100 100" class="pie">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#00E5FF" stroke-width="15"
+                                    stroke-dasharray="75.4 251.2" stroke-dashoffset="0" opacity="0.8"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#FF6A00" stroke-width="15"
+                                    stroke-dasharray="62.8 251.2" stroke-dashoffset="-75.4" opacity="0.8"/>
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#00D4AA" stroke-width="15"
+                                    stroke-dasharray="37.7 251.2" stroke-dashoffset="-138.2" opacity="0.8"/>
+                            <circle cx="50" cy="50" r="30" fill="#0B0B0B"/>
+                            <text x="50" y="52" text-anchor="middle" font-size="16" font-weight="bold" fill="#00E5FF">24%</text>
+                        </svg>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-color" style="background: #00E5FF;"></span> Tech (30%)</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #FF6A00;"></span> Finance (25%)</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #00D4AA;"></span> Other (15%)</span>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Financial Overview</h4>
+                <div class="financial-stats">
+                    <div class="fin-stat">
+                        <div class="fin-label">Total Revenue</div>
+                        <div class="fin-value">$45,230</div>
+                        <div class="fin-change positive">↑ 12% this month</div>
+                    </div>
+                    <div class="fin-stat">
+                        <div class="fin-label">Total Paid</div>
+                        <div class="fin-value">$28,450</div>
+                        <div class="fin-change">↑ 8% this month</div>
+                    </div>
+                    <div class="fin-stat">
+                        <div class="fin-label">Net Profit</div>
+                        <div class="fin-value">$16,780</div>
+                        <div class="fin-change positive">↑ 18% this month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials">
+        <div class="section-header">
+            <h2>Success Stories</h2>
+            <p>Real results from real users</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"GETIVA completely transformed my job search. Within 2 months, I had 5 interviews and 2 offers. The automation is incredible."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">AK</div>
+                    <div>
+                        <div class="author-name">Alex Kumar</div>
+                        <div class="author-role">Software Engineer @ Google</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"As a recruiter, managing multiple students became effortless. The dashboard and analytics are professional-grade. Highly recommend!"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">SR</div>
+                    <div>
+                        <div class="author-name">Sarah Roberts</div>
+                        <div class="author-role">Senior Recruiter</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">⭐⭐⭐⭐⭐</div>
+                <p class="testimonial-text">"The analytics helped us optimize our recruitment process. Our success rate improved by 40% in the first quarter."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">MP</div>
+                    <div>
+                        <div class="author-name">Michael Park</div>
+                        <div class="author-role">Consultancy Manager</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Start Your Job Journey Today</h2>
+            <p>Join hundreds of students who've landed their dream jobs with GETIVA</p>
+            <button class="btn btn-primary glow large">Get Started Now</button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>GETIVA</h4>
+                <p>Apply smarter. Get hired faster.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#security">Security</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#blog">Blog</a></li>
+                    <li><a href="#careers">Careers</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="#">Twitter</a></li>
+                    <li><a href="#">LinkedIn</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 GETIVA. All rights reserved.</p>
+            <ul>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Auth Modals -->
+    <div class="auth-modal" id="authModal">
+        <div class="modal-content">
+            <!-- Login Form -->
+            <div class="form-container active" id="loginForm">
+                <button class="modal-close" id="closeAuthModal">&times;</button>
+                <h2>Welcome Back</h2>
+                <p>Sign in to your account</p>
+
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" name="username" required placeholder="Enter your username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+                    </div>
+
+                    <div class="form-error" id="loginError"></div>
+
+                    <button type="submit" class="btn btn-primary full-width" id="loginSubmit">
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    <p>Don't have an account? <button class="link-btn" id="switchToRegister">Create one</button></p>
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="form-container" id="registerForm">
+                <button class="modal-close" id="closeAuthModal2">&times;</button>
+                <h2>Get Started</h2>
+                <p>Create your account to begin</p>
+
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" name="username" required placeholder="Choose a username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" name="email" required placeholder="Enter your email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" name="password" required placeholder="Create a strong password">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerRole">I am a...</label>
+                        <select id="registerRole" name="role" required>
+                            <option value="">Select your role</option>
+                            <option value="student">Student</option>
+                            <option value="recruiter">Recruiter</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="fullNameGroup" style="display: none;">
+                        <label for="registerFullName">Full Name</label>
+                        <input type="text" id="registerFullName" name="full_name" placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-error" id="registerError"></div>
+
+                    <button type="submit" class="btn btn-primary full-width" id="registerSubmit">
+                        Create Account
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    <p>Already have an account? <button class="link-btn" id="switchToLogin">Sign in</button></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
