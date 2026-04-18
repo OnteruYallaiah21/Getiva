@@ -4,10 +4,10 @@ from sqlalchemy import desc
 from typing import List
 from uuid import UUID
 
-from database import get_db
-from models import Application, User, UserRole, Student, Recruiter, ApplicationStatus
-from schemas import ApplicationCreate, ApplicationUpdate, ApplicationResponse, ApplicationDetailResponse, ApplicationListResponse
-from routes.auth import get_current_user, require_role
+from ..database import get_db
+from ..models import Application, User, UserRole, Student, Recruiter, ApplicationStatus
+from ..schemas import ApplicationCreate, ApplicationUpdate, ApplicationResponse, ApplicationDetailResponse, ApplicationListResponse
+from .auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
 

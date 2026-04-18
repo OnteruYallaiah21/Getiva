@@ -2,9 +2,9 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-from config import settings
-from schemas import TokenData
-from models import UserRole
+from .config import settings
+from .schemas import TokenData
+from .models import UserRole
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from config import settings
-from database import engine, Base
-from routes import auth, applications, payments, analytics, files
+from .config import settings
+from .database import engine, Base
+from .routes import auth, applications, payments, analytics, files
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "main:app",
+        "backend.main:app",
         host="0.0.0.0",
         port=settings.PORT,
         reload=settings.DEBUG,

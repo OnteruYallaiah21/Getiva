@@ -8,10 +8,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
-from main import app
-from database import Base, get_db
-from models import User, UserRole
-from auth import hash_password
+from .main import app
+from .database import Base, get_db
+from .models import User, UserRole
+from .auth import hash_password
 
 
 # Use SQLite in-memory database for tests

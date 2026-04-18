@@ -4,16 +4,16 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from database import get_db
-from models import (
+from ..database import get_db
+from ..models import (
     Application, User, UserRole, Student, Recruiter, StudentPayment, RecruiterPayment,
     ApplicationStatus, PaymentStatus
 )
-from schemas import (
+from ..schemas import (
     ApplicationStats, RecruiterStats, DailyReport, RecruiterPerformanceReport,
     FinancialReport, SystemAnalytics
 )
-from routes.auth import get_current_user, require_role
+from .auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 

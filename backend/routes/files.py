@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, UserRole, Student, Recruiter
-from storage import storage_client
-from routes.auth import get_current_user, require_role
+from ..database import get_db
+from ..models import User, UserRole, Student, Recruiter
+from ..storage import storage_client
+from .auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/files", tags=["files"])
 

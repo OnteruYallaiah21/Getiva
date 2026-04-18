@@ -4,16 +4,16 @@ from sqlalchemy import desc
 from typing import List, Union
 from uuid import UUID
 
-from database import get_db
-from models import (
+from ..database import get_db
+from ..models import (
     StudentPayment, RecruiterPayment, User, UserRole, Student, Recruiter, PaymentStatus
 )
-from schemas import (
+from ..schemas import (
     StudentPaymentCreate, StudentPaymentUpdate, StudentPaymentResponse,
     RecruiterPaymentCreate, RecruiterPaymentUpdate, RecruiterPaymentResponse,
     PaymentListResponse
 )
-from routes.auth import get_current_user, require_role
+from .auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/payments", tags=["payments"])
 
