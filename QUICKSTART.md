@@ -231,6 +231,46 @@ logging.basicConfig()
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 ```
 
+## 🧪 Running Tests
+
+GETIVA includes a comprehensive unit test suite using pytest. Tests are fully isolated with an in-memory SQLite database.
+
+### Run All Tests
+```bash
+pytest
+```
+
+### Run Tests with Coverage Report
+```bash
+pytest --cov=. --cov-report=html
+```
+
+### Run Specific Test Module
+```bash
+pytest tests/test_auth.py -v      # Auth tests
+pytest tests/test_applications.py  # Application tests
+pytest tests/test_payments.py      # Payment tests
+pytest tests/test_analytics.py     # Analytics tests
+```
+
+### Use the Test Runner Script
+```bash
+./run_tests.sh                      # Run all tests
+./run_tests.sh coverage             # Generate coverage report
+./run_tests.sh auth                 # Run auth tests only
+./run_tests.sh quick                # Skip slow tests
+./run_tests.sh debug                # Verbose debug output
+```
+
+### Test Coverage
+- **Auth**: User registration, login, token refresh (~95%)
+- **Applications**: CRUD operations, role-based filtering (~90%)
+- **Payments**: Student/recruiter payments, status updates (~85%)
+- **Analytics**: System stats, reports, financial data (~80%)
+- **Main App**: Health checks, API schema (~100%)
+
+For detailed testing documentation, see [TEST_README.md](TEST_README.md).
+
 ## 🔧 Configuration Tips
 
 ### Change Token Expiration
