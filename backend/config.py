@@ -20,9 +20,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # Supabase
-    SUPABASE_URL: str
-    SUPABASE_API_KEY: str
+    # Supabase (optional for development)
+    SUPABASE_URL: str = "https://example.supabase.co"
+    SUPABASE_API_KEY: str = "your_supabase_api_key"
     SUPABASE_BUCKET: str = "resumes"
 
     # CORS
