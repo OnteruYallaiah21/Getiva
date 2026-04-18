@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from config import settings
 from database import engine, Base
-from routes import auth, applications, payments, analytics
+from routes import auth, applications, payments, analytics, files
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -68,6 +68,7 @@ app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(payments.router)
 app.include_router(analytics.router)
+app.include_router(files.router)
 
 
 # Global exception handler
