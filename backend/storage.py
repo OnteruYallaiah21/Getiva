@@ -8,8 +8,18 @@ class SupabaseStorage:
     """Handle file storage operations with Supabase."""
 
     def __init__(self):
-        self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        self.client: Client = None
         self.bucket_name = settings.SUPABASE_BUCKET
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        """Lazily initialize the Supabase client on first use."""
+        if not self._initialized:
+            try:
+                self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+                self._initialized = True
+            except Exception as e:
+                raise Exception(f"Failed to initialize Supabase client: {str(e)}")
 
     def upload_file(self, file_bytes: bytes, file_name: str, student_id: str) -> str:
         """Upload a file to Supabase storage.
@@ -22,6 +32,8 @@ class SupabaseStorage:
         Returns:
             Public URL of the uploaded file
         """
+        self._ensure_initialized()
+
         # Create unique file path
         timestamp = datetime.utcnow().isoformat()
         file_extension = os.path.splitext(file_name)[1]
@@ -48,6 +60,8 @@ class SupabaseStorage:
         Args:
             file_url: Public URL of the file to delete
         """
+        self._ensure_initialized()
+
         try:
             # Extract path from URL
             # URL format: https://bucket.supabase.co/storage/v1/object/public/bucket_name/path
@@ -67,6 +81,8 @@ class SupabaseStorage:
         Returns:
             List of files metadata
         """
+        self._ensure_initialized()
+
         try:
             response = self.client.storage.from_(self.bucket_name).list(student_id)
             return response
@@ -75,5 +91,5 @@ class SupabaseStorage:
             return []
 
 
-# Singleton instance
+# Singleton instance (lazy initialization)
 storage_client = SupabaseStorage()
