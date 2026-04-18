@@ -1,5 +1,11 @@
 # GETIVA - Job Application Tracking Platform
 
+<div align="center">
+  <img src="frontend/public/images/logo.png" alt="GETIVA Logo" width="150" height="150">
+  
+  **We'll store it for you**
+</div>
+
 A comprehensive job application tracking and consultancy management system built with FastAPI (backend) and modern web technologies (frontend).
 
 ## Project Structure
@@ -20,6 +26,7 @@ Getiva/
 │   └── requirements.txt  # Python dependencies
 ├── frontend/            # Web interface
 │   ├── public/          # HTML files
+│   │   └── images/      # Images and logo
 │   ├── css/             # Stylesheets
 │   └── js/              # JavaScript files
 └── docs/                # Documentation
@@ -34,6 +41,12 @@ Getiva/
 - **File Storage**: Resume and document uploads via Supabase
 - **Database Migrations**: Alembic for schema versioning
 - **Comprehensive Tests**: Unit tests for all API endpoints
+
+## Logo
+
+Place the GETIVA logo image at: `frontend/public/images/logo.png`
+
+The logo should be a square image (PNG format recommended) with the GETIVA branding.
 
 ## Prerequisites
 
