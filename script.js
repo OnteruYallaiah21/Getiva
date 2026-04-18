@@ -388,3 +388,312 @@ const imageObserver = new IntersectionObserver((entries, observer) => {
 lazyImages.forEach(img => imageObserver.observe(img));
 
 console.log('GETIVA - Modern SaaS Platform loaded successfully');
+
+/* ============================================
+   GETIVA - Backend API Integration
+   ============================================ */
+
+// API Configuration
+const API_BASE_URL = localStorage.getItem('apiBaseUrl') || 'http://localhost:8000/api';
+const DASHBOARDS = {
+    admin: 'admin-dashboard.html',
+    recruiter: 'recruiter-dashboard.html',
+    student: 'student-dashboard.html'
+};
+
+// Toast notification system
+function showToast(message, type = 'success', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+    };
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type]}</span>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('exit');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// Modal Management
+function openAuthModal() {
+    document.getElementById('authModal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAuthModal() {
+    document.getElementById('authModal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = 'auto';
+    resetForms();
+}
+
+function switchToRegister() {
+    document.getElementById('loginForm').classList.remove('active');
+    document.getElementById('registerForm').classList.add('active');
+}
+
+function switchToLogin() {
+    document.getElementById('registerForm').classList.remove('active');
+    document.getElementById('loginForm').classList.add('active');
+}
+
+function resetForms() {
+    document.getElementById('loginFormElement').reset();
+    document.getElementById('registerFormElement').reset();
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('registerError').textContent = '';
+}
+
+// Authentication Functions
+async function login(username, password) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Login failed');
+        }
+
+        const data = await response.json();
+        
+        // Store token and user info
+        localStorage.setItem('authToken', data.access_token);
+        localStorage.setItem('tokenType', data.token_type);
+        
+        // Get user role from token
+        const userRole = await getUserRole(data.access_token);
+        localStorage.setItem('userRole', userRole);
+        
+        showToast(`Welcome! Redirecting to ${userRole} dashboard...`, 'success', 2000);
+        
+        // Redirect after short delay
+        setTimeout(() => {
+            window.location.href = DASHBOARDS[userRole];
+        }, 1500);
+        
+        return true;
+    } catch (error) {
+        document.getElementById('loginError').textContent = error.message;
+        showToast(error.message, 'error');
+        return false;
+    }
+}
+
+async function register(userData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Registration failed');
+        }
+
+        const data = await response.json();
+        
+        showToast('Account created! Logging you in...', 'success');
+        
+        // Auto-login after registration
+        setTimeout(() => {
+            switchToLogin();
+            showToast('Now sign in with your credentials', 'info');
+        }, 2000);
+        
+        return true;
+    } catch (error) {
+        document.getElementById('registerError').textContent = error.message;
+        showToast(error.message, 'error');
+        return false;
+    }
+}
+
+async function getUserRole(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const user = await response.json();
+            return user.role;
+        }
+        
+        // Fallback: extract role from JWT payload
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role || 'student';
+    } catch (error) {
+        console.error('Error getting user role:', error);
+        return 'student';
+    }
+}
+
+// Check if user is already logged in
+function checkExistingAuth() {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        const role = localStorage.getItem('userRole') || 'student';
+        const dashboard = DASHBOARDS[role];
+        if (dashboard) {
+            window.location.href = dashboard;
+        }
+    }
+}
+
+// Form Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Check existing auth on page load
+    checkExistingAuth();
+
+    // Sign In button
+    const signInBtn = document.getElementById('signInBtn');
+    if (signInBtn) {
+        signInBtn.addEventListener('click', openAuthModal);
+    }
+
+    // Get Started buttons
+    const startButtons = document.querySelectorAll('.btn.btn-primary.glow');
+    startButtons.forEach(btn => {
+        btn.addEventListener('click', openAuthModal);
+    });
+
+    // Close modal
+    document.getElementById('closeAuthModal')?.addEventListener('click', closeAuthModal);
+    document.getElementById('closeAuthModal2')?.addEventListener('click', closeAuthModal);
+    document.getElementById('modalOverlay')?.addEventListener('click', closeAuthModal);
+
+    // Switch between forms
+    document.getElementById('switchToRegister')?.addEventListener('click', switchToRegister);
+    document.getElementById('switchToLogin')?.addEventListener('click', switchToLogin);
+
+    // Login form submission
+    document.getElementById('loginFormElement')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        const submitBtn = document.getElementById('loginSubmit');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Signing in...';
+        submitBtn.disabled = true;
+        
+        const success = await login(username, password);
+        
+        if (!success) {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Register form submission
+    document.getElementById('registerFormElement')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            username: document.getElementById('registerUsername').value,
+            email: document.getElementById('registerEmail').value,
+            password: document.getElementById('registerPassword').value,
+            role: document.getElementById('registerRole').value,
+        };
+
+        if (formData.role === 'student') {
+            formData.full_name = document.getElementById('registerFullName').value || formData.username;
+        }
+
+        const submitBtn = document.getElementById('registerSubmit');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Creating account...';
+        submitBtn.disabled = true;
+        
+        const success = await register(formData);
+        
+        if (!success) {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Show/hide full name field based on role
+    document.getElementById('registerRole')?.addEventListener('change', (e) => {
+        const fullNameGroup = document.getElementById('fullNameGroup');
+        if (e.target.value === 'student') {
+            fullNameGroup.style.display = 'block';
+        } else {
+            fullNameGroup.style.display = 'none';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAuthModal();
+        }
+    });
+});
+
+// Logout function for dashboards
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('tokenType');
+    localStorage.removeItem('userRole');
+    window.location.href = 'index.html';
+}
+
+// API helper with authentication
+async function fetchAPI(endpoint, options = {}) {
+    const token = localStorage.getItem('authToken');
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers
+    });
+
+    if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('authToken');
+        window.location.href = 'index.html';
+        throw new Error('Session expired. Please login again.');
+    }
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'API request failed');
+    }
+
+    return response.json();
+}
+
