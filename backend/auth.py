@@ -1,4 +1,4 @@
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -6,18 +6,21 @@ from .config import settings
 from .schemas import TokenData
 from .models import UserRole
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt (compatible with existing passlib-generated hashes)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
+        )
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> tuple[str, int]:
@@ -49,11 +52,17 @@ def decode_token(token: str) -> Optional[TokenData]:
         username: str = payload.get("sub")
         user_id: str = payload.get("user_id")
         role: str = payload.get("role")
+        must_change_password = payload.get("must_change_password")
 
         if username is None:
             return None
 
-        token_data = TokenData(username=username, user_id=user_id, role=UserRole(role) if role else None)
+        token_data = TokenData(
+            username=username,
+            user_id=user_id,
+            role=UserRole(role) if role else None,
+            must_change_password=must_change_password if must_change_password is not None else None,
+        )
         return token_data
     except JWTError:
         return None

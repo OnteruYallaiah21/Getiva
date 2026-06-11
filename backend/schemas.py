@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -11,10 +11,24 @@ from .models import UserRole, ApplicationStatus, PaymentStatus
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=255)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     password: str = Field(..., min_length=8)
     role: UserRole = UserRole.STUDENT
     full_name: Optional[str] = None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def empty_email_as_none(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def empty_full_name_as_none(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip() if isinstance(v, str) else v
 
 
 class UserLogin(BaseModel):
@@ -28,10 +42,28 @@ class Token(BaseModel):
     expires_in: int
 
 
+class LoginResponse(Token):
+    """Login payload: token plus first-login / forced password-change flag."""
+
+    must_change_password: bool = False
+
+
 class TokenData(BaseModel):
     username: Optional[str] = None
     user_id: Optional[UUID] = None
     role: Optional[UserRole] = None
+    must_change_password: Optional[bool] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+
+class AdminResetPasswordRequest(BaseModel):
+    """Admin sets a new password for any account (stored as hash; previous password is not recoverable)."""
+
+    new_password: str = Field(..., min_length=8)
 
 
 # ============================================
@@ -44,6 +76,28 @@ class UserResponse(BaseModel):
     email: str
     role: UserRole
     is_active: int
+    is_temp_password: bool = False
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    items: List[UserResponse]
+    total: int
+    page: int
+    per_page: int
+
+
+class StoredDocumentResponse(BaseModel):
+    """Supabase file URL stored in Postgres (e.g. Neon)."""
+
+    id: UUID
+    file_name: str
+    title: Optional[str]
+    storage_url: str
+    uploaded_by_id: UUID
     created_at: datetime
 
     class Config:
@@ -85,6 +139,15 @@ class StudentDetailResponse(StudentResponse):
     applications: List["ApplicationResponse"] = []
 
 
+class StudentDirectoryEntry(BaseModel):
+    """Student row for recruiter/admin pickers (links Student profile to login username)."""
+
+    id: UUID
+    username: str
+    full_name: str
+    email: str
+
+
 # ============================================
 # Recruiter Schemas
 # ============================================
@@ -115,12 +178,15 @@ class RecruiterResponse(BaseModel):
 # ============================================
 
 class ApplicationCreate(BaseModel):
-    student_id: UUID
+    """``student_id`` may be omitted when exactly one active student exists (recruiter convenience)."""
+
+    student_id: Optional[UUID] = None
     company_name: str = Field(..., min_length=1, max_length=255)
-    job_title: str = Field(..., min_length=1, max_length=255)
-    job_description: Optional[str] = None
+    job_title: Optional[str] = Field(None, max_length=255)
+    job_description: str = Field(..., min_length=1)
     job_url: Optional[str] = None
     notes: Optional[str] = None
+    resume_url: Optional[str] = None
 
 
 class ApplicationUpdate(BaseModel):
@@ -138,6 +204,9 @@ class ApplicationResponse(BaseModel):
     applied_date: datetime
     notes: Optional[str]
     created_at: datetime
+    job_description: Optional[str] = None
+    job_url: Optional[str] = None
+    resume_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -146,9 +215,6 @@ class ApplicationResponse(BaseModel):
 class ApplicationDetailResponse(ApplicationResponse):
     student: Optional[StudentResponse] = None
     recruiter: Optional[RecruiterResponse] = None
-    job_description: Optional[str] = None
-    job_url: Optional[str] = None
-    resume_url: Optional[str] = None
 
 
 class ApplicationListResponse(BaseModel):
@@ -214,11 +280,18 @@ class RecruiterPaymentResponse(BaseModel):
         from_attributes = True
 
 
-class PaymentListResponse(BaseModel):
+class StudentPaymentListResponse(BaseModel):
     total: int
     page: int
     per_page: int
     items: List[StudentPaymentResponse]
+
+
+class RecruiterPaymentListResponse(BaseModel):
+    total: int
+    page: int
+    per_page: int
+    items: List[RecruiterPaymentResponse]
 
 
 # ============================================

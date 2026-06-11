@@ -1,45 +1,100 @@
-from supabase import create_client, Client
 from .config import settings
 import os
+import uuid
+import time
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+import httpx
 
 
 class SupabaseStorage:
     """Handle file storage operations with Supabase."""
 
     def __init__(self):
-        self.client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        # Do NOT create the Supabase client at import time. Keep client None
+        # until a storage operation requires it. This avoids crashing the app
+        # during startup when credentials are missing/invalid.
+        self.client: Optional[Any] = None
         self.bucket_name = settings.SUPABASE_BUCKET
-        self._initialized = False
-
-    def _ensure_initialized(self):
-        """Lazily initialize the Supabase client on first use."""
-        if not self._initialized:
-            try:
-                self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-                self._initialized = True
-            except Exception as e:
-                raise Exception(f"Failed to initialize Supabase client: {str(e)}")
+        self.url = settings.SUPABASE_URL
 
     def _ensure_client(self):
-        """Create the Supabase client on first use and validate configuration."""
+        """Create the Supabase client on first use and validate configuration.
+
+        Import the supabase package here to avoid module-level import errors
+        when the package isn't installed in some environments.
+        """
         if self.client is not None:
             return
 
-        url = getattr(settings, "SUPABASE_URL", None)
-        key = getattr(settings, "SUPABASE_KEY", None)
+        def _norm_jwt(v: Optional[str]) -> str:
+            if not v:
+                return ""
+            return v.strip().replace("\n", "").replace("\r", "").replace(" ", "")
 
-        if not url or not key or key.startswith("your_") or url.startswith("https://example"):
+        url = (getattr(settings, "SUPABASE_URL", None) or "").strip().rstrip("/")
+        service_role = _norm_jwt(getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", None))
+        anon = _norm_jwt(getattr(settings, "SUPABASE_KEY", None))
+
+        # Prefer service_role for backend-only uploads; URLs are still saved in Postgres and exposed as links to the UI.
+        if service_role and not service_role.startswith("your_"):
+            key = service_role
+            key_source = "SUPABASE_SERVICE_ROLE_KEY"
+        elif anon and not anon.startswith("your_"):
+            key = anon
+            key_source = "SUPABASE_KEY"
+        else:
             raise RuntimeError(
-                "Supabase not configured: set SUPABASE_URL and SUPABASE_KEY in the environment or .env"
+                "Supabase not configured: set SUPABASE_URL and either "
+                "SUPABASE_SERVICE_ROLE_KEY (recommended for backend uploads) or SUPABASE_KEY (anon JWT)."
+            )
+
+        if not url or url.startswith("https://example"):
+            raise RuntimeError(
+                "Supabase not configured: set SUPABASE_URL in the environment or .env"
+            )
+
+        if key.startswith("sb_publishable_") or key.startswith("sb_secret_"):
+            raise RuntimeError(
+                f"{key_source} must be a legacy JWT (eyJ… three parts) from Supabase Dashboard → API. "
+                "Do not use sb_publishable_* or sb_secret_* with this Python client."
             )
 
         try:
-            self.client = create_client(url, key)
+            # Local import so missing package doesn't break imports elsewhere
+            from supabase import create_client
+            from supabase.lib.client_options import ClientOptions
+
+            timeout = max(5, int(getattr(settings, "SUPABASE_STORAGE_TIMEOUT_SECONDS", 60)))
+            options = ClientOptions(
+                postgrest_client_timeout=timeout,
+                storage_client_timeout=timeout,
+            )
+            self.client = create_client(url, key, options=options)
         except Exception as e:
-            # Surface a clearer error for misconfigured/invalid keys
-            raise RuntimeError(f"Failed to create Supabase client: {e}")
+            msg = str(e)
+            if "Invalid API key" in msg or "invalid" in msg.lower():
+                raise RuntimeError(
+                    f"Failed to create Supabase client: {msg}. "
+                    f"Check SUPABASE_URL and {key_source} (JWT, no line breaks)."
+                ) from e
+            raise RuntimeError(f"Failed to create Supabase client: {e}") from e
+
+    def _upload_with_retries(self, path: str, file_bytes: bytes):
+        retries = max(0, int(getattr(settings, "SUPABASE_UPLOAD_RETRIES", 2)))
+        for attempt in range(retries + 1):
+            try:
+                return self.client.storage.from_(self.bucket_name).upload(
+                    path,
+                    file_bytes,
+                    {"cacheControl": "3600", "upsert": "false"},
+                )
+            except Exception as e:
+                is_timeout = isinstance(e, httpx.ReadTimeout) or "timed out" in str(e).lower()
+                if is_timeout and attempt < retries:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                raise
 
     def upload_file(self, file_bytes: bytes, file_name: str, student_id: str) -> str:
         """Upload a file to Supabase storage.
@@ -52,7 +107,8 @@ class SupabaseStorage:
         Returns:
             Public URL of the uploaded file
         """
-        self._ensure_initialized()
+        # Ensure client exists before performing any operations
+        self._ensure_client()
 
         # Create unique file path
         timestamp = datetime.utcnow().isoformat()
@@ -64,18 +120,39 @@ class SupabaseStorage:
 
         try:
             # Upload file
-            response = self.client.storage.from_(self.bucket_name).upload(
-                unique_name,
-                file_bytes,
-                {"cacheControl": "3600", "upsert": "false"},
-            )
+            response = self._upload_with_retries(unique_name, file_bytes)
 
             # Generate public URL
             public_url = self.client.storage.from_(self.bucket_name).get_public_url(unique_name)
 
             return public_url
         except Exception as e:
-            raise Exception(f"Failed to upload file: {str(e)}")
+            msg = str(e)
+            if "Bucket not found" in msg:
+                raise Exception(
+                    f"Failed to upload file: bucket '{self.bucket_name}' not found in project {self.url}. "
+                    "Create the bucket in Supabase Storage or set SUPABASE_BUCKET correctly."
+                )
+            raise Exception(f"Failed to upload file: {msg}")
+
+    def upload_admin_document(self, file_bytes: bytes, file_name: str) -> str:
+        """Upload an admin document to Supabase under admin-docs/; returns public URL."""
+        self._ensure_client()
+        safe_base = os.path.basename(file_name) or "document"
+        file_extension = os.path.splitext(safe_base)[1]
+        unique_name = f"admin-docs/{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}_{uuid.uuid4().hex[:12]}{file_extension}"
+        try:
+            self._upload_with_retries(unique_name, file_bytes)
+            public_url = self.client.storage.from_(self.bucket_name).get_public_url(unique_name)
+            return public_url
+        except Exception as e:
+            msg = str(e)
+            if "Bucket not found" in msg:
+                raise Exception(
+                    f"Failed to upload admin document: bucket '{self.bucket_name}' not found in project {self.url}. "
+                    "Create the bucket in Supabase Storage or set SUPABASE_BUCKET correctly."
+                )
+            raise Exception(f"Failed to upload admin document: {msg}")
 
     def delete_file(self, file_url: str):
         """Delete a file from Supabase storage.
@@ -104,8 +181,6 @@ class SupabaseStorage:
         Returns:
             List of files metadata
         """
-        self._ensure_initialized()
-
         try:
             self._ensure_client()
             response = self.client.storage.from_(self.bucket_name).list(student_id)

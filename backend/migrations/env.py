@@ -10,11 +10,13 @@ from alembic import context
 import os
 import sys
 
-# Add backend directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Repo root on path so `backend.*` imports match package layout (database uses relative imports).
+_BACKEND_DIR = os.path.dirname(os.path.dirname(__file__))
+_REPO_ROOT = os.path.dirname(_BACKEND_DIR)
+sys.path.insert(0, _REPO_ROOT)
 
-from config import settings
-from database import Base
+from backend.config import settings
+from backend.database import Base
 
 # This is the Alembic Config object
 config = context.config
@@ -60,8 +62,12 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    configuration = config.get_section(config.config_ini_section)
+    configuration = config.get_section(config.config_ini_section) or {}
     configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    # Empty sqlalchemy.* values from ini (e.g. isolation_level=) are invalid for create_engine.
+    for k in list(configuration):
+        if k.startswith("sqlalchemy.") and configuration[k] == "":
+            del configuration[k]
 
     connectable = engine_from_config(
         configuration,

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, Numeric, ForeignKey, Enum, Integer
+from sqlalchemy import Column, String, DateTime, Text, Numeric, ForeignKey, Enum, Integer, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
@@ -37,12 +37,14 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.STUDENT)
     is_active = Column(Integer, default=1)
+    is_temp_password = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     student = relationship("Student", uselist=False, back_populates="user")
     recruiter = relationship("Recruiter", uselist=False, back_populates="user")
+    stored_documents = relationship("StoredDocument", back_populates="uploader")
 
 
 class Student(Base):
@@ -132,3 +134,18 @@ class RecruiterPayment(Base):
 
     # Relationships
     recruiter = relationship("Recruiter", back_populates="payments")
+
+
+class StoredDocument(Base):
+    """Admin-uploaded files: binary in Supabase Storage, URL persisted in Postgres (Neon)."""
+
+    __tablename__ = "stored_documents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_name = Column(String(512), nullable=False)
+    title = Column(String(512), nullable=True)
+    storage_url = Column(Text, nullable=False)
+    uploaded_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    uploader = relationship("User", back_populates="stored_documents")

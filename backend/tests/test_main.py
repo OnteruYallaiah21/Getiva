@@ -29,24 +29,22 @@ class TestHealthCheck:
 
 
 class TestRootEndpoint:
-    """Tests for root endpoint."""
+    """Tests for root and API info endpoints."""
 
-    def test_root_endpoint(self, client: TestClient):
-        """Test root endpoint."""
+    def test_root_serves_landing_html(self, client: TestClient):
+        """Root serves the GETIVA landing page."""
         response = client.get("/")
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+        assert "GETIVA" in response.text
+
+    def test_api_info_json(self, client: TestClient):
+        """API metadata JSON for programmatic clients."""
+        response = client.get("/api/info")
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
         assert "version" in data
-        assert "docs" in data
-        assert "redoc" in data
-
-    def test_root_endpoint_structure(self, client: TestClient):
-        """Test root endpoint response structure."""
-        response = client.get("/")
-        assert response.status_code == 200
-        data = response.json()
-        assert "welcome" in data["message"].lower() or "GETIVA" in data["message"]
         assert data["docs"] == "/docs"
         assert data["redoc"] == "/redoc"
 

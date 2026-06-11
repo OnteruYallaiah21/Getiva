@@ -1,6 +1,10 @@
 """Pytest configuration and fixtures for GETIVA tests."""
 
 import os
+
+# Ensure SECRET_KEY exists if tests run without a .env (DATABASE_URL should come from .env / CI).
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest")
+
 from typing import Generator
 import pytest
 from fastapi.testclient import TestClient
@@ -24,6 +28,22 @@ engine = create_engine(
 )
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def _disable_google_drive_in_tests(monkeypatch: pytest.MonkeyPatch):
+    """So local service_account.json does not bypass Supabase mocks or call real Drive."""
+    import backend.google_drive_storage as gds
+
+    monkeypatch.setattr(gds, "resolve_service_account_path", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _disable_b2_in_tests(monkeypatch: pytest.MonkeyPatch):
+    """Tests mock Supabase; do not call real Backblaze B2 when backend/.env has keys."""
+    import backend.b2_storage as b2
+
+    monkeypatch.setattr(b2, "b2_configured", lambda: False)
 
 
 @pytest.fixture(scope="function")
@@ -71,7 +91,7 @@ def test_recruiter_data() -> dict:
         "email": "recruiter@example.com",
         "password": "RecruiterPass123!",
         "role": UserRole.RECRUITER.value,
-        "name": "John Recruiter",
+        "full_name": "John Recruiter",
     }
 
 
@@ -102,6 +122,7 @@ def create_test_user(db: Session):
             password_hash=hash_password(password),
             role=role,
             is_active=is_active,
+            is_temp_password=False,
         )
         db.add(user)
         db.commit()
@@ -112,18 +133,36 @@ def create_test_user(db: Session):
 
 
 @pytest.fixture
-def get_auth_token(client: TestClient, test_user_data: dict):
-    """Get authentication token for a test user."""
-    def _get_token(user_data: dict = None) -> str:
+def get_auth_token(client: TestClient, test_user_data: dict, test_admin_data: dict):
+    """Get JWT for a user created by bootstrap admin (or the bootstrap admin)."""
+
+    def _get_token(user_data: dict | None = None) -> str:
         data = user_data or test_user_data
-        # Register user
-        client.post("/api/auth/register", json=data)
-        # Login
-        response = client.post(
+        boot = client.post("/api/auth/bootstrap", json=test_admin_data)
+        assert boot.status_code == 201, boot.text
+        admin_login = client.post(
+            "/api/auth/login",
+            json={
+                "username": test_admin_data["username"],
+                "password": test_admin_data["password"],
+            },
+        )
+        assert admin_login.status_code == 200, admin_login.text
+        admin_tok = admin_login.json()["access_token"]
+        if data["username"] == test_admin_data["username"]:
+            return admin_tok
+        created = client.post(
+            "/api/auth/users",
+            json=data,
+            headers={"Authorization": f"Bearer {admin_tok}"},
+        )
+        assert created.status_code == 201, created.text
+        login = client.post(
             "/api/auth/login",
             json={"username": data["username"], "password": data["password"]},
         )
-        return response.json()["access_token"]
+        assert login.status_code == 200, login.text
+        return login.json()["access_token"]
 
     return _get_token
 

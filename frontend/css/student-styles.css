@@ -3,15 +3,15 @@
    ============================================ */
 
 :root {
-    --primary-dark: #0B0B0B;
-    --secondary-dark: #1A1A1A;
-    --tertiary-dark: #2A2A2A;
-    --accent-blue: #00E5FF;
-    --accent-orange: #FF6A00;
-    --accent-teal: #00D4AA;
-    --text-primary: #FFFFFF;
-    --text-secondary: #B0B0B0;
-    --border-color: #333;
+    --primary-dark: #0b0f14;
+    --secondary-dark: #111827;
+    --tertiary-dark: #1f2937;
+    --accent-blue: #8b5cf6;
+    --accent-orange: #f97316;
+    --accent-teal: #22c55e;
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --border-color: #1f2937;
     --sidebar-width: 260px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -72,9 +72,10 @@ body {
 
 .student-label {
     font-size: 0.75rem;
-    color: var(--accent-teal);
+    color: var(--gv-role-student, #22c55e);
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 700;
 }
 
 .sidebar-nav {

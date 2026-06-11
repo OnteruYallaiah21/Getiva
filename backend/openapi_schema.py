@@ -56,12 +56,16 @@ def custom_openapi():
             {
                 "name": "files",
                 "description": "File Management - Resume and document uploads"
-            }
+            },
+            {
+                "name": "students",
+                "description": "Student directory for recruiters (list students for assignment)"
+            },
         ]
     )
 
     openapi_schema["info"]["x-logo"] = {
-        "url": "images/logo.png",
+        "url": "images/getiva.png",
         "altText": "GETIVA Logo"
     }
 

@@ -4,20 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GETIVA Recruiter Dashboard</title>
+    <link rel="icon" href="images/getiva.png" type="image/png">
     <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/getiva-theme.css">
+    <link rel="stylesheet" href="../css/admin-styles.css">
     <link rel="stylesheet" href="../css/recruiter-styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="recruiter-container">
+<body class="admin-app recruiter-portal">
+    <div class="admin-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo-recruiter">
-                    <img src="images/logo.png" alt="GETIVA Logo" width="32" height="32" style="border-radius: 8px; object-fit: cover;">
+                <div class="logo-admin">
+                    <img src="images/getiva.png" alt="GETIVA" width="32" height="32" style="border-radius: 8px; object-fit: contain;">
                     <span>GETIVA</span>
                 </div>
-                <p class="recruiter-label">Recruiter Portal</p>
+                <p class="admin-label">Recruiter Portal</p>
             </div>
 
             <nav class="sidebar-nav">
@@ -60,9 +65,10 @@
                     <h1 id="pageTitle">Dashboard</h1>
                 </div>
                 <div class="top-bar-right">
-                    <button class="notification-btn">🔔</button>
+                    <input type="text" class="search-box" placeholder="Search…" aria-label="Search" id="recruiterTopSearch">
+                    <button type="button" class="notification-btn" aria-label="Notifications">🔔</button>
                     <div class="user-profile">
-                        <span id="recruiterName">Recruiter Name</span>
+                        <span id="userName">Recruiter</span>
                     </div>
                 </div>
             </div>
@@ -79,7 +85,7 @@
                         <button class="btn btn-primary" onclick="openCreateApplicationModal()">+ New Application</button>
                     </div>
 
-                    <div class="stats-grid">
+                    <div class="dashboard-grid">
                         <div class="stat-card">
                             <div class="stat-icon">👥</div>
                             <div class="stat-info">
@@ -110,13 +116,13 @@
                         </div>
                     </div>
 
-                    <div class="dashboard-grid">
-                        <div class="dashboard-card">
+                    <div class="dashboard-charts">
+                        <div class="chart-card">
                             <h3>Success Rate</h3>
                             <div class="success-circle">
-                                <svg viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#333" stroke-width="4"/>
-                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#FF6A00" stroke-width="4"
+                                <svg viewBox="0 0 100 100" aria-hidden="true">
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(161,161,170,0.28)" stroke-width="4"/>
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#22d3ee" stroke-width="4"
                                             stroke-dasharray="282.7" stroke-dashoffset="141.35" id="successCircle"/>
                                 </svg>
                                 <div class="success-text">
@@ -126,25 +132,25 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="chart-card">
                             <h3>This Month</h3>
-                            <div class="month-stats">
-                                <div class="month-stat">
-                                    <div class="month-label">Applications</div>
-                                    <div class="month-value" id="monthApps">0</div>
+                            <div class="financial-overview">
+                                <div class="fin-stat">
+                                    <div class="fin-label">Applications</div>
+                                    <div class="fin-value" id="monthApps">0</div>
                                 </div>
-                                <div class="month-stat">
-                                    <div class="month-label">Interviews</div>
-                                    <div class="month-value" id="monthInterviews">0</div>
+                                <div class="fin-stat">
+                                    <div class="fin-label">Interviews</div>
+                                    <div class="fin-value" id="monthInterviews">0</div>
                                 </div>
-                                <div class="month-stat">
-                                    <div class="month-label">Offers</div>
-                                    <div class="month-value" id="monthOffers">0</div>
+                                <div class="fin-stat">
+                                    <div class="fin-label">Offers</div>
+                                    <div class="fin-value" id="monthOffers">0</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="chart-card">
                             <h3>Recent Applications</h3>
                             <div class="recent-apps" id="recentApps">
                                 <p class="empty">Loading...</p>
@@ -157,11 +163,10 @@
                 <section id="students-section" class="section">
                     <div class="section-header">
                         <h2>My Students</h2>
-                        <button class="btn btn-primary" onclick="openAddStudentModal()">+ Add Student</button>
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" id="searchStudents" class="search-input" placeholder="Search students...">
+                        <input type="text" id="searchStudents" class="search-box" placeholder="Search students...">
                         <select id="studentStatusFilter" class="filter-select">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
@@ -182,7 +187,7 @@
                     </div>
 
                     <div class="filter-bar">
-                        <input type="text" id="searchApplications" class="search-input" placeholder="Search by company...">
+                        <input type="text" id="searchApplications" class="search-box" placeholder="Search by company...">
                         <select id="appStatusFilter" class="filter-select">
                             <option value="">All Status</option>
                             <option value="applied">Applied</option>
@@ -199,13 +204,14 @@
                                 <th>Company</th>
                                 <th>Position</th>
                                 <th>Status</th>
-                                <th>Applied</th>
+                                <th>Date &amp; Time</th>
+                                <th>Resume</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="applicationsTable">
                             <tr>
-                                <td colspan="6" class="empty">Loading applications...</td>
+                                <td colspan="7" class="empty">Loading applications...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -313,7 +319,7 @@
                                 <th>Month</th>
                                 <th>Amount</th>
                                 <th>Status</th>
-                                <th>Date</th>
+                                <th>Date &amp; Time</th>
                             </tr>
                         </thead>
                         <tbody id="paymentsTable">
@@ -382,27 +388,26 @@
                 <button class="close-btn">&times;</button>
             </div>
             <form id="applicationForm">
-                <div class="form-group">
-                    <label>Select Student</label>
-                    <select id="studentSelect" required>
-                        <option value="">-- Choose Student --</option>
+                <div class="form-group" id="studentSelectGroup" hidden>
+                    <label>Student</label>
+                    <select id="studentSelect">
+                        <option value="">-- Choose student --</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Company</label>
-                    <input type="text" id="companyName" required>
+                    <label>Attachment</label>
+                    <input type="file" id="applicationResume" required>
+                    <p class="modal-hint" style="margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--adm-text-muted, #a1a1aa);">
+                        Documents or images (e.g. PDF, Word, Excel, ZIP) up to 10&nbsp;MB.
+                    </p>
                 </div>
                 <div class="form-group">
-                    <label>Position</label>
-                    <input type="text" id="jobTitle" required>
+                    <label>Company name</label>
+                    <input type="text" id="companyName" required maxlength="255" autocomplete="organization">
                 </div>
                 <div class="form-group">
-                    <label>Job Description</label>
-                    <textarea id="jobDescription" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Job URL</label>
-                    <input type="url" id="jobUrl">
+                    <label>Job description</label>
+                    <textarea id="jobDescription" rows="5" required minlength="1" placeholder="Role summary, requirements, location, etc."></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Create Application</button>
@@ -412,37 +417,11 @@
         </div>
     </div>
 
-    <!-- Add Student Modal -->
-    <div id="addStudentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add Student</h2>
-                <button class="close-btn">&times;</button>
-            </div>
-            <form id="addStudentForm">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="studentFullName" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="studentEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="studentPhone">
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Add Student</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeAddStudentModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
-    <script src="../js/recruiter-script.js"></script>
+    <script src="../js/date-utils.js?v=20260611"></script>
+    <script src="../js/resume-links.js?v=20260611"></script>
+    <script src="../js/recruiter-script.js?v=20260611"></script>
 </body>
 </html>

@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GETIVA Admin Dashboard</title>
+    <link rel="icon" href="images/getiva.png" type="image/png">
     <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/admin-styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/getiva-theme.css">
+    <link rel="stylesheet" href="../css/admin-styles.css?v=20260611b">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="admin-app">
     <div class="admin-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-admin">
-                    <img src="images/logo.png" alt="GETIVA Logo" width="32" height="32" style="border-radius: 8px; object-fit: cover;">
+                    <img src="images/getiva.png" alt="GETIVA" width="32" height="32" style="border-radius: 8px; object-fit: contain;">
                     <span>GETIVA</span>
                 </div>
                 <p class="admin-label">Administrator</p>
@@ -25,9 +29,17 @@
                     <span class="icon">📊</span>
                     <span>Dashboard</span>
                 </a>
+                <a href="#" data-section="landing" class="nav-link">
+                    <span class="icon">🌐</span>
+                    <span>Landing Page</span>
+                </a>
                 <a href="#" data-section="users" class="nav-link">
                     <span class="icon">👥</span>
                     <span>Users</span>
+                </a>
+                <a href="#" data-section="documents" class="nav-link">
+                    <span class="icon">📁</span>
+                    <span>Documents</span>
                 </a>
                 <a href="#" data-section="applications" class="nav-link">
                     <span class="icon">📝</span>
@@ -72,6 +84,11 @@
             <div class="content">
                 <!-- Dashboard Section -->
                 <section id="dashboard-section" class="section active">
+                    <div class="dashboard-quick-links">
+                        <button type="button" class="btn btn-secondary" data-section-jump="landing">🌐 Open landing page preview</button>
+                        <a class="btn btn-secondary" href="/index-old.html" target="_blank" rel="noopener noreferrer">Open landing in new tab</a>
+                    </div>
+
                     <div class="dashboard-grid">
                         <div class="stat-card">
                             <div class="stat-icon">👨‍🎓</div>
@@ -139,7 +156,7 @@
                                     <th>Company</th>
                                     <th>Position</th>
                                     <th>Status</th>
-                                    <th>Applied</th>
+                                    <th>Date &amp; Time</th>
                                 </tr>
                             </thead>
                             <tbody id="recentApplications">
@@ -157,6 +174,9 @@
                         <h2>User Management</h2>
                         <button id="addUserBtn" class="btn btn-primary">+ Add User</button>
                     </div>
+                    <p class="help-text users-help-text">
+                        Stored passwords cannot be looked up later (they are hashed). When you <strong>create a user</strong> or <strong>reset password</strong>, you will see a one-time screen to copy the password you just set—share it securely with that person.
+                    </p>
 
                     <div class="filter-bar">
                         <select id="roleFilter" class="filter-select">
@@ -193,6 +213,43 @@
                     <div id="pagination" class="pagination"></div>
                 </section>
 
+                <!-- Supabase document storage (URLs in Neon) -->
+                <section id="documents-section" class="section">
+                    <div class="section-header">
+                        <h2>Document storage</h2>
+                    </div>
+                    <p class="admin-doc-intro">
+                        Files are uploaded to your <strong>Supabase Storage</strong> bucket (<code id="bucketHint">getiva_resume</code>).
+                        The public URL for each file is saved in the <strong>Neon</strong> Postgres database.
+                    </p>
+                    <div class="filter-bar" style="flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="docTitle">Title (optional)</label>
+                            <input type="text" id="docTitle" class="search-box" placeholder="e.g. Policy 2026" style="min-width: 220px;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="docFile">File (PDF, Word, TXT)</label>
+                            <input type="file" id="docFile" accept=".pdf,.doc,.docx,.txt">
+                        </div>
+                        <button type="button" id="uploadDocBtn" class="btn btn-primary">Upload to Supabase</button>
+                    </div>
+                    <table class="data-table" style="margin-top: 1.5rem;">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>File name</th>
+                                <th>URL (stored in Neon)</th>
+                                <th>Uploaded</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTable">
+                            <tr>
+                                <td colspan="4" class="empty">Open this section to load documents.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
                 <!-- Applications Section -->
                 <section id="applications-section" class="section">
                     <div class="section-header">
@@ -214,13 +271,14 @@
                                 <th>Position</th>
                                 <th>Recruiter</th>
                                 <th>Status</th>
-                                <th>Applied Date</th>
+                                <th>Date &amp; Time</th>
+                                <th>Resume</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="applicationsTable">
                             <tr>
-                                <td colspan="7" class="empty">Loading applications...</td>
+                                <td colspan="8" class="empty">Loading applications...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -247,7 +305,7 @@
                                     <th>Amount</th>
                                     <th>Type</th>
                                     <th>Status</th>
-                                    <th>Date</th>
+                                    <th>Date &amp; Time</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -271,7 +329,7 @@
                                     <th>Amount</th>
                                     <th>Month</th>
                                     <th>Status</th>
-                                    <th>Date</th>
+                                    <th>Date &amp; Time</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -378,6 +436,25 @@
                         <div id="reportContent" class="report-content"></div>
                     </div>
                 </section>
+
+                <!-- Classic landing page (index-old.html) -->
+                <section id="landing-section" class="section">
+                    <div class="section-header landing-section-header">
+                        <h2>Marketing landing page</h2>
+                        <div class="landing-section-actions">
+                            <a class="btn btn-secondary" href="/index-old.html" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+                            <button type="button" class="btn btn-secondary" id="reloadLandingPreview">Reload preview</button>
+                        </div>
+                    </div>
+                    <div class="admin-landing-embed">
+                        <iframe
+                            id="landingOldFrame"
+                            src="/index-old.html"
+                            title="GETIVA classic landing page"
+                            loading="lazy"
+                        ></iframe>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -389,14 +466,14 @@
                 <h2>Add User</h2>
                 <button class="close-btn">&times;</button>
             </div>
-            <form id="userForm">
+            <form id="userForm" novalidate>
                 <div class="form-group">
                     <label>Username</label>
                     <input type="text" id="username" required>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required>
+                    <label>Email (optional)</label>
+                    <input type="text" id="email" inputmode="email" autocomplete="email" placeholder="Leave blank to use a system placeholder">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -411,8 +488,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="fullName">
+                    <label>Full name (optional)</label>
+                    <input type="text" id="fullName" autocomplete="name" placeholder="Defaults to username for students/recruiters">
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Create User</button>
@@ -422,9 +499,64 @@
         </div>
     </div>
 
+    <!-- Reset password (admin only; API: POST /api/auth/users/{id}/reset-password) -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reset password</h2>
+                <button type="button" class="close-btn" id="closeResetPwModal">&times;</button>
+            </div>
+            <p class="modal-hint">
+                User: <strong id="resetPwUsername">—</strong>
+            </p>
+            <form id="resetPasswordForm">
+                <input type="hidden" id="resetPwUserId" value="">
+                <div class="form-group">
+                    <label for="resetPwNew">New password</label>
+                    <input type="password" id="resetPwNew" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                </div>
+                <div class="form-group">
+                    <label for="resetPwConfirm">Confirm new password</label>
+                    <input type="password" id="resetPwConfirm" required minlength="8" autocomplete="new-password">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save new password</button>
+                    <button type="button" class="btn btn-secondary" id="cancelResetPw">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- One-time credential copy (only passwords you just created or reset—not retrievable later) -->
+    <div id="credentialShareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Credentials to share</h2>
+                <button type="button" class="close-btn" id="closeCredentialShareModal">&times;</button>
+            </div>
+            <p class="modal-hint">
+                This password cannot be shown again from the system. Copy it now or reset the password again later.
+            </p>
+            <div class="form-group">
+                <label for="shareCredUsername">Username</label>
+                <input type="text" id="shareCredUsername" readonly class="search-box" style="width: 100%;">
+            </div>
+            <div class="form-group">
+                <label for="shareCredPassword">Password (just set)</label>
+                <input type="text" id="shareCredPassword" readonly class="search-box" style="width: 100%; font-family: monospace;">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="copyCredentialsBtn">Copy username &amp; password</button>
+                <button type="button" class="btn btn-secondary" id="dismissCredentialShare">Done</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
-    <script src="../js/admin-script.js"></script>
+    <script src="../js/date-utils.js?v=20260611b"></script>
+    <script src="../js/resume-links.js?v=20260611b"></script>
+    <script src="../js/admin-script.js?v=20260611c"></script>
 </body>
 </html>

@@ -3,7 +3,9 @@
    ============================================ */
 
 // Configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL =
+    (typeof localStorage !== 'undefined' && localStorage.getItem('apiBaseUrl')) ||
+    `${window.location.origin}/api`;
 let authToken = localStorage.getItem('authToken');
 
 // State management
@@ -40,13 +42,40 @@ async function initializeApp() {
 
 async function loadCurrentUser() {
     try {
-        state.currentUser = {
-            id: 'recruiter-id',
-            name: 'Recruiter Name',
-            email: 'recruiter@example.com',
-        };
-        document.getElementById('recruiterName').textContent = state.currentUser.name;
-        document.getElementById('recruiterGreeting').textContent = state.currentUser.name.split(' ')[0];
+        const r = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (r.status === 401) {
+            redirectToLogin();
+            return;
+        }
+        if (!r.ok) {
+            throw new Error('Could not load profile');
+        }
+        const u = await r.json();
+
+        if (u.role !== 'recruiter') {
+            localStorage.setItem('userRole', u.role);
+            if (u.role === 'student') {
+                window.location.href = 'student-dashboard.html';
+            } else if (u.role === 'admin') {
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+            return;
+        }
+
+        if (u.is_temp_password) {
+            localStorage.setItem('mustChangePassword', 'true');
+            window.location.href = 'change-password.html';
+            return;
+        }
+
+        state.currentUser = u;
+        const display = u.username || 'Recruiter';
+        document.getElementById('userName').textContent = display;
+        document.getElementById('recruiterGreeting').textContent = display.split(/[\s@]+/)[0];
     } catch (error) {
         console.error('Failed to load user:', error);
         redirectToLogin();
@@ -54,7 +83,7 @@ async function loadCurrentUser() {
 }
 
 function redirectToLogin() {
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
 }
 
 // ============================================
@@ -83,7 +112,6 @@ function setupEventListeners() {
 
     // Forms
     document.getElementById('applicationForm')?.addEventListener('submit', handleCreateApplication);
-    document.getElementById('addStudentForm')?.addEventListener('submit', handleAddStudent);
     document.getElementById('settingsForm')?.addEventListener('submit', handleSettingsSave);
 
     // Filters
@@ -148,33 +176,111 @@ async function loadSectionData(sectionName) {
 // DATA LOADING
 // ============================================
 
+async function fetchRecruiterApplicationItems(perPage = 200) {
+    const response = await fetch(
+        `${API_BASE_URL}/applications?page=1&per_page=${perPage}`,
+        { headers: { Authorization: `Bearer ${authToken}` } },
+    );
+    if (response.status === 401) {
+        redirectToLogin();
+        return [];
+    }
+    if (!response.ok) {
+        return [];
+    }
+    const data = await response.json();
+    return data.items || [];
+}
+
+function renderRecentApplicationsFromItems(items) {
+    const container = document.getElementById('recentApps');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!items.length) {
+        container.innerHTML = '<p class="empty">No applications yet</p>';
+        return;
+    }
+    items.slice(0, 5).forEach((app) => {
+        const div = document.createElement('div');
+        div.className = 'recent-app-item';
+        const resumeUrl = resolveApplicationResumeUrl(app);
+        const resumePart = resumeUrl
+            ? ` • <button type="button" class="resume-inline-link" onclick="viewApplicationResume('${app.id}')">Resume</button>`
+            : '';
+        div.innerHTML = `
+                <strong>${app.company_name}</strong>
+                <span>${app.job_title} • ${formatDateTime(app.applied_date)}${resumePart}</span>
+            `;
+        container.appendChild(div);
+    });
+}
+
+/** Count applications whose applied_date falls in the current calendar month (DB-backed). */
+function updateDashboardMonthStatsFromApplications(items) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    let monthApps = 0;
+    let monthInterviews = 0;
+    let monthOffers = 0;
+    for (const app of items) {
+        const d = new Date(app.applied_date);
+        if (d.getFullYear() !== y || d.getMonth() !== m) continue;
+        monthApps += 1;
+        if (app.status === 'interview') monthInterviews += 1;
+        if (app.status === 'offer') monthOffers += 1;
+    }
+    const elA = document.getElementById('monthApps');
+    const elI = document.getElementById('monthInterviews');
+    const elO = document.getElementById('monthOffers');
+    if (elA) elA.textContent = monthApps;
+    if (elI) elI.textContent = monthInterviews;
+    if (elO) elO.textContent = monthOffers;
+}
+
+function enrichStudentsApplicationCounts(applicationItems) {
+    const counts = {};
+    for (const s of state.students) {
+        counts[s.id] = { applications: 0, interviews: 0, offers: 0 };
+    }
+    for (const app of applicationItems) {
+        const sid = app.student_id;
+        if (!counts[sid]) continue;
+        counts[sid].applications += 1;
+        if (app.status === 'interview') counts[sid].interviews += 1;
+        if (app.status === 'offer') counts[sid].offers += 1;
+    }
+    state.students = state.students.map((s) => ({
+        ...s,
+        ...counts[s.id],
+    }));
+}
+
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_BASE_URL}/analytics/applications`, {
             headers: { Authorization: `Bearer ${authToken}` },
         });
+        if (!response.ok) {
+            showToast('Failed to load dashboard stats', 'error');
+            return;
+        }
         const stats = await response.json();
 
-        // Update stat cards
         const total = stats.total_applications || 1;
-        document.getElementById('totalStudents').textContent = '0'; // TODO: Get from API
         document.getElementById('totalApplications').textContent = stats.total_applications;
         document.getElementById('interviewCount').textContent = stats.interview_count;
         document.getElementById('offerCount').textContent = stats.offer_count;
 
-        // Update success rate
         const successRate = Math.round((stats.offer_count / total) * 100);
         document.getElementById('successRate').textContent = successRate;
         updateSuccessCircle(successRate);
 
-        // Update month stats (simulated)
-        document.getElementById('monthApps').textContent = Math.floor(stats.total_applications * 0.3);
-        document.getElementById('monthInterviews').textContent = Math.floor(stats.interview_count * 0.4);
-        document.getElementById('monthOffers').textContent = Math.floor(stats.offer_count * 0.5);
-
-        // Load recent applications
-        await loadRecentApplications();
         await loadStudentsData();
+        const appItems = await fetchRecruiterApplicationItems(250);
+        state.applications = appItems;
+        updateDashboardMonthStatsFromApplications(appItems);
+        renderRecentApplicationsFromItems(appItems);
     } catch (error) {
         console.error('Failed to load dashboard:', error);
         showToast('Failed to load dashboard', 'error');
@@ -183,23 +289,8 @@ async function loadDashboardData() {
 
 async function loadRecentApplications() {
     try {
-        const response = await fetch(`${API_BASE_URL}/applications?page=1&per_page=5`, {
-            headers: { Authorization: `Bearer ${authToken}` },
-        });
-        const data = await response.json();
-
-        const container = document.getElementById('recentApps');
-        container.innerHTML = '';
-
-        data.items?.slice(0, 5).forEach((app) => {
-            const div = document.createElement('div');
-            div.className = 'recent-app-item';
-            div.innerHTML = `
-                <strong>${app.company_name}</strong>
-                <span>${app.job_title} • ${new Date(app.applied_date).toLocaleDateString()}</span>
-            `;
-            container.appendChild(div);
-        });
+        const items = await fetchRecruiterApplicationItems(50);
+        renderRecentApplicationsFromItems(items);
     } catch (error) {
         console.error('Failed to load recent applications:', error);
     }
@@ -207,35 +298,54 @@ async function loadRecentApplications() {
 
 async function loadStudentsData() {
     try {
-        // Mock data for students
-        state.students = [
-            {
-                id: '1',
-                name: 'John Doe',
-                email: 'john@example.com',
-                phone: '555-0100',
-                applications: 12,
-                interviews: 3,
-                offers: 1,
-            },
-            {
-                id: '2',
-                name: 'Jane Smith',
-                email: 'jane@example.com',
-                phone: '555-0101',
-                applications: 8,
-                interviews: 2,
-                offers: 1,
-            },
-        ];
+        const response = await fetch(`${API_BASE_URL}/students`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+        if (!response.ok) {
+            let msg = 'Could not load students';
+            try {
+                const err = await response.json();
+                msg = formatApiDetail(err.detail) || msg;
+            } catch (_) {
+                /* ignore */
+            }
+            showToast(msg, 'error');
+            state.students = [];
+        } else {
+            const data = await response.json();
+            state.students = (Array.isArray(data) ? data : []).map((s) => ({
+                id: s.id,
+                name: s.full_name,
+                username: s.username,
+                email: s.email || '',
+                resume_url: s.resume_url || '',
+                applications: 0,
+                interviews: 0,
+                offers: 0,
+            }));
+        }
+
+        const appsForCounts =
+            state.applications.length > 0 ? state.applications : await fetchRecruiterApplicationItems(250);
+        if (!state.applications.length) {
+            state.applications = appsForCounts;
+        }
+        enrichStudentsApplicationCounts(appsForCounts);
 
         if (state.currentSection === 'dashboard') {
-            document.getElementById('totalStudents').textContent = state.students.length;
+            const el = document.getElementById('totalStudents');
+            if (el) el.textContent = state.students.length;
         } else {
             displayStudents(state.students);
         }
     } catch (error) {
         console.error('Failed to load students:', error);
+        state.students = [];
+        showToast('Failed to load students', 'error');
     }
 }
 
@@ -256,7 +366,7 @@ function displayStudents(students) {
         card.innerHTML = `
             <div class="student-header">
                 <div class="student-name">${student.name}</div>
-                <div class="student-email">${student.email}</div>
+                <div class="student-email">${student.email}${student.username ? ` · @${student.username}` : ''}</div>
             </div>
             <div class="student-stats">
                 <div class="stat-mini">
@@ -287,6 +397,7 @@ function displayStudents(students) {
 
 async function loadApplicationsData() {
     try {
+        await loadStudentsData();
         const response = await fetch(`${API_BASE_URL}/applications`, {
             headers: { Authorization: `Bearer ${authToken}` },
         });
@@ -299,6 +410,13 @@ async function loadApplicationsData() {
     }
 }
 
+function resolveApplicationResumeUrl(app) {
+    const direct = (app.resume_url || '').trim();
+    if (direct) return direct;
+    const student = state.students.find((s) => s.id === app.student_id);
+    return (student?.resume_url || '').trim();
+}
+
 function displayApplicationsTable(applications) {
     const tbody = document.getElementById('applicationsTable');
     if (!tbody) return;
@@ -306,18 +424,20 @@ function displayApplicationsTable(applications) {
     tbody.innerHTML = '';
 
     if (applications.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">No applications</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">No applications</td></tr>';
         return;
     }
 
     applications.forEach((app) => {
+        const resumeUrl = resolveApplicationResumeUrl(app);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${app.student_id.substring(0, 8)}</td>
             <td>${app.company_name}</td>
             <td>${app.job_title}</td>
             <td><span class="status-badge status-${app.status}">${app.status}</span></td>
-            <td>${new Date(app.applied_date).toLocaleDateString()}</td>
+            <td>${typeof formatDateTime === 'function' ? formatDateTime(app.applied_date) : new Date(app.applied_date).toLocaleString('en-US')}</td>
+            <td>${buildResumeLinksHtml(resumeUrl, resumeUrl ? app.id : null)}</td>
             <td>
                 <button class="action-btn" onclick="updateAppStatus('${app.id}')">Update</button>
             </td>
@@ -331,9 +451,12 @@ async function loadPerformanceData() {
         const response = await fetch(`${API_BASE_URL}/analytics/applications`, {
             headers: { Authorization: `Bearer ${authToken}` },
         });
+        if (!response.ok) {
+            showToast('Failed to load performance', 'error');
+            return;
+        }
         const stats = await response.json();
 
-        // Update breakdown stats
         const total = stats.total_applications || 1;
         document.getElementById('appliedCount').textContent = stats.applied_count;
         document.getElementById('appliedProgress').style.width = `${(stats.applied_count / total) * 100}%`;
@@ -344,12 +467,18 @@ async function loadPerformanceData() {
         document.getElementById('offerCount2').textContent = stats.offer_count;
         document.getElementById('offerProgress').style.width = `${(stats.offer_count / total) * 100}%`;
 
-        // Update funnel
         document.getElementById('funnelApplied').textContent = stats.applied_count;
         document.getElementById('funnelInterview').textContent = stats.interview_count;
         document.getElementById('funnelOffer').textContent = stats.offer_count;
 
-        // Load student performance table
+        if (!state.students.length) {
+            await loadStudentsData();
+        } else {
+            const apps =
+                state.applications.length > 0 ? state.applications : await fetchRecruiterApplicationItems(250);
+            if (!state.applications.length) state.applications = apps;
+            enrichStudentsApplicationCounts(apps);
+        }
         displayStudentPerformance(state.students);
     } catch (error) {
         console.error('Failed to load performance:', error);
@@ -361,6 +490,11 @@ function displayStudentPerformance(students) {
     if (!tbody) return;
 
     tbody.innerHTML = '';
+
+    if (!students.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No students in directory</td></tr>';
+        return;
+    }
 
     students.forEach((student) => {
         const successRate = student.applications > 0 ? Math.round((student.offers / student.applications) * 100) : 0;
@@ -377,26 +511,51 @@ function displayStudentPerformance(students) {
 
 async function loadPaymentsData() {
     try {
-        // Mock payment data
-        const mockPayments = [
-            { month: '2024-01', amount: 2000, status: 'completed', date: '2024-02-01' },
-            { month: '2023-12', amount: 2000, status: 'completed', date: '2024-01-01' },
-            { month: '2023-11', amount: 1500, status: 'completed', date: '2023-12-01' },
-        ];
+        const response = await fetch(`${API_BASE_URL}/payments/recruiter?page=1&per_page=100`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+        if (!response.ok) {
+            let msg = 'Could not load payments';
+            try {
+                const err = await response.json();
+                msg = formatApiDetail(err.detail) || msg;
+            } catch (_) {
+                /* ignore */
+            }
+            showToast(msg, 'error');
+            state.payments = [];
+            document.getElementById('totalEarned').textContent = '$0.00';
+            document.getElementById('totalPaid').textContent = '$0.00';
+            document.getElementById('totalPending').textContent = '$0.00';
+            displayPaymentsTable([]);
+            return;
+        }
 
-        state.payments = mockPayments;
+        const data = await response.json();
+        state.payments = data.items || [];
 
-        const totalEarned = mockPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPaid = mockPayments.filter(p => p.status === 'completed').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPending = mockPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalEarned = state.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const totalPaid = state.payments
+            .filter((p) => p.status === 'completed')
+            .reduce((sum, p) => sum + Number(p.amount), 0);
+        const totalPending = state.payments
+            .filter((p) => p.status === 'pending')
+            .reduce((sum, p) => sum + Number(p.amount), 0);
 
         document.getElementById('totalEarned').textContent = `$${totalEarned.toFixed(2)}`;
         document.getElementById('totalPaid').textContent = `$${totalPaid.toFixed(2)}`;
         document.getElementById('totalPending').textContent = `$${totalPending.toFixed(2)}`;
 
-        displayPaymentsTable(mockPayments);
+        displayPaymentsTable(state.payments);
     } catch (error) {
         console.error('Failed to load payments:', error);
+        state.payments = [];
+        showToast('Failed to load payments', 'error');
+        displayPaymentsTable([]);
     }
 }
 
@@ -406,20 +565,26 @@ function displayPaymentsTable(payments) {
 
     tbody.innerHTML = '';
 
+    if (!payments.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No payment records yet</td></tr>';
+        return;
+    }
+
     payments.forEach((payment) => {
         const row = document.createElement('tr');
+        const status = payment.status || '';
         row.innerHTML = `
-            <td>${payment.month}</td>
-            <td>$${parseFloat(payment.amount).toFixed(2)}</td>
-            <td><span class="status-badge status-${payment.status}">${payment.status}</span></td>
-            <td>${new Date(payment.date).toLocaleDateString()}</td>
+            <td>${payment.salary_month}</td>
+            <td>$${Number(payment.amount).toFixed(2)}</td>
+            <td><span class="status-badge status-${status}">${status}</span></td>
+            <td>${formatDateTime(payment.payment_date)}</td>
         `;
         tbody.appendChild(row);
     });
 }
 
 async function loadSettingsData() {
-    document.getElementById('settingsName').value = state.currentUser?.name || '';
+    document.getElementById('settingsName').value = state.currentUser?.username || '';
     document.getElementById('settingsEmail').value = state.currentUser?.email || '';
 }
 
@@ -427,16 +592,33 @@ async function loadSettingsData() {
 // USER INTERACTIONS
 // ============================================
 
-function openCreateApplicationModal() {
+async function openCreateApplicationModal(preselectStudentId = null) {
+    await loadStudentsData();
+    const group = document.getElementById('studentSelectGroup');
     const select = document.getElementById('studentSelect');
-    select.innerHTML = '<option value="">-- Choose Student --</option>';
+    select.innerHTML = '<option value="">-- Choose student --</option>';
 
     state.students.forEach((student) => {
         const option = document.createElement('option');
         option.value = student.id;
-        option.textContent = student.name;
+        const uname = student.username ? ` (@${student.username})` : '';
+        option.textContent = `${student.name}${uname}`;
         select.appendChild(option);
     });
+
+    if (state.students.length > 1) {
+        group.hidden = false;
+        select.required = true;
+        if (preselectStudentId && state.students.some((s) => s.id === preselectStudentId)) {
+            select.value = preselectStudentId;
+        } else {
+            select.value = '';
+        }
+    } else {
+        group.hidden = true;
+        select.required = false;
+        select.value = '';
+    }
 
     document.getElementById('createApplicationModal').classList.add('active');
 }
@@ -446,25 +628,80 @@ function closeCreateApplicationModal() {
     document.getElementById('applicationForm').reset();
 }
 
-function openAddStudentModal() {
-    document.getElementById('addStudentModal').classList.add('active');
-}
-
-function closeAddStudentModal() {
-    document.getElementById('addStudentModal').classList.remove('active');
-    document.getElementById('addStudentForm').reset();
-}
-
 async function handleCreateApplication(e) {
     e.preventDefault();
 
+    const company = document.getElementById('companyName').value.trim();
+    const jobDescription = document.getElementById('jobDescription').value.trim();
+    if (!company) {
+        showToast('Please enter the company name.', 'error');
+        return;
+    }
+    if (!jobDescription) {
+        showToast('Please enter the job description.', 'error');
+        return;
+    }
+
+    if (!state.students.length) {
+        showToast('No students are available. Ask an administrator to add a student account.', 'error');
+        return;
+    }
+
+    let studentId = null;
+    if (state.students.length === 1) {
+        studentId = state.students[0].id;
+    } else {
+        studentId = document.getElementById('studentSelect').value;
+        if (!studentId) {
+            showToast('Please select which student this application is for.', 'error');
+            return;
+        }
+    }
+
+    const fileInput = document.getElementById('applicationResume');
+    const file = fileInput?.files?.[0];
+    if (!file) {
+        showToast('Please upload a file for this application.', 'error');
+        return;
+    }
+
+    let resume_url;
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('student_id', studentId);
+        const up = await fetch(`${API_BASE_URL}/files/resume`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authToken}` },
+            body: fd,
+        });
+        if (!up.ok) {
+            let msg = 'Resume upload failed';
+            try {
+                const err = await up.json();
+                msg = formatApiDetail(err.detail) || msg;
+            } catch (_) {
+                /* ignore */
+            }
+            showToast(msg, 'error');
+            return;
+        }
+        const uploaded = await up.json();
+        resume_url = uploaded.url;
+    } catch (error) {
+        console.error('Resume upload error:', error);
+        showToast('Resume upload failed', 'error');
+        return;
+    }
+
     const appData = {
-        student_id: document.getElementById('studentSelect').value,
-        company_name: document.getElementById('companyName').value,
-        job_title: document.getElementById('jobTitle').value,
-        job_description: document.getElementById('jobDescription').value,
-        job_url: document.getElementById('jobUrl').value,
+        company_name: company,
+        job_description: jobDescription,
+        resume_url,
     };
+    if (state.students.length > 1) {
+        appData.student_id = studentId;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/applications`, {
@@ -481,45 +718,18 @@ async function handleCreateApplication(e) {
             closeCreateApplicationModal();
             await loadApplicationsData();
         } else {
-            showToast('Failed to create application', 'error');
+            let msg = 'Failed to create application';
+            try {
+                const err = await response.json();
+                msg = formatApiDetail(err.detail) || msg;
+            } catch (_) {
+                /* ignore */
+            }
+            showToast(msg, 'error');
         }
     } catch (error) {
         console.error('Error creating application:', error);
         showToast('Error creating application', 'error');
-    }
-}
-
-async function handleAddStudent(e) {
-    e.preventDefault();
-
-    const studentData = {
-        username: document.getElementById('studentEmail').value.split('@')[0],
-        email: document.getElementById('studentEmail').value,
-        password: 'TempPassword123!',
-        role: 'student',
-        full_name: document.getElementById('studentFullName').value,
-    };
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify(studentData),
-        });
-
-        if (response.ok) {
-            showToast('Student added successfully', 'success');
-            closeAddStudentModal();
-            await loadStudentsData();
-        } else {
-            showToast('Failed to add student', 'error');
-        }
-    } catch (error) {
-        console.error('Error adding student:', error);
-        showToast('Error adding student', 'error');
     }
 }
 
@@ -542,9 +752,14 @@ function resetSettingsForm() {
 function filterStudents() {
     const search = document.getElementById('searchStudents').value.toLowerCase();
 
-    let filtered = state.students.filter((student) =>
-        student.name.toLowerCase().includes(search) || student.email.toLowerCase().includes(search)
-    );
+    let filtered = state.students.filter((student) => {
+        const uname = (student.username || '').toLowerCase();
+        return (
+            student.name.toLowerCase().includes(search) ||
+            student.email.toLowerCase().includes(search) ||
+            uname.includes(search)
+        );
+    });
 
     displayStudents(filtered);
 }
@@ -577,8 +792,31 @@ function viewStudentDetail(studentId) {
     showToast('View student feature coming soon', 'info');
 }
 
-function createAppForStudent(studentId) {
-    openCreateApplicationModal();
+async function createAppForStudent(studentId) {
+    await openCreateApplicationModal(studentId);
+}
+
+function formatApiDetail(detail) {
+    if (detail == null) return 'Request failed';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+        return detail
+            .map((item) => {
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') {
+                    const loc = Array.isArray(item.loc) ? item.loc.filter((p) => p !== 'body').join('.') : '';
+                    const msg = item.msg || item.message || '';
+                    return loc ? `${loc}: ${msg}` : msg || JSON.stringify(item);
+                }
+                return String(item);
+            })
+            .filter(Boolean)
+            .join(' · ');
+    }
+    if (typeof detail === 'object') {
+        return detail.msg || detail.message || JSON.stringify(detail);
+    }
+    return String(detail);
 }
 
 // ============================================

@@ -19,27 +19,44 @@ def create_application(
     current_user: User = Depends(require_role(UserRole.RECRUITER, UserRole.ADMIN)),
 ):
     """Create a new job application."""
-    # Verify student exists
-    student = db.query(Student).filter(Student.id == app_data.student_id).first()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
-
-    # Get recruiter
     recruiter = db.query(Recruiter).filter(Recruiter.user_id == current_user.id).first()
-    if not recruiter and current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Recruiter profile not found")
+    if not recruiter:
+        raise HTTPException(
+            status_code=403,
+            detail="Recruiter profile not found. Applications must be created by an account with a recruiter profile.",
+        )
 
-    # Use current recruiter or allow admin to specify
-    recruiter_id = recruiter.id if recruiter else None
+    if app_data.student_id is None:
+        active_students = (
+            db.query(Student)
+            .join(User, Student.user_id == User.id)
+            .filter(User.role == UserRole.STUDENT, User.is_active == 1)
+            .all()
+        )
+        if len(active_students) != 1:
+            raise HTTPException(
+                status_code=400,
+                detail="student_id is required when more than one active student exists",
+            )
+        student = active_students[0]
+        resolved_student_id = student.id
+    else:
+        student = db.query(Student).filter(Student.id == app_data.student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        resolved_student_id = app_data.student_id
+
+    job_title = (app_data.job_title or "").strip() or app_data.company_name
 
     db_application = Application(
-        student_id=app_data.student_id,
-        recruiter_id=recruiter_id,
+        student_id=resolved_student_id,
+        recruiter_id=recruiter.id,
         company_name=app_data.company_name,
-        job_title=app_data.job_title,
+        job_title=job_title,
         job_description=app_data.job_description,
         job_url=app_data.job_url,
         notes=app_data.notes,
+        resume_url=app_data.resume_url,
     )
 
     db.add(db_application)
@@ -55,7 +72,7 @@ def list_applications(
     recruiter_id: UUID = Query(None),
     status: ApplicationStatus = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100),
+    per_page: int = Query(10, ge=1, le=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

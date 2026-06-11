@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from decimal import Decimal
-from models import Student, Recruiter, StudentPayment, RecruiterPayment, PaymentStatus, UserRole
+from models import User, Student, Recruiter, StudentPayment, RecruiterPayment, PaymentStatus, UserRole
 
 
 class TestStudentPayments:
@@ -199,15 +199,13 @@ class TestRecruiterPayments:
         client: TestClient,
         db: Session,
         recruiter_auth_headers: dict,
-        create_test_user,
     ):
         """Test recruiter viewing their payments."""
-        recruiter_user = create_test_user(role=UserRole.RECRUITER)
-        recruiter = Recruiter(user_id=recruiter_user.id, name="John Recruiter")
-        db.add(recruiter)
-        db.commit()
+        recruiter_user = db.query(User).filter(User.username == "recruiter").first()
+        assert recruiter_user is not None
+        recruiter = db.query(Recruiter).filter(Recruiter.user_id == recruiter_user.id).first()
+        assert recruiter is not None
 
-        # Create payment
         payment = RecruiterPayment(
             recruiter_id=recruiter.id,
             amount=Decimal("2500.00"),
@@ -220,8 +218,9 @@ class TestRecruiterPayments:
         response = client.get("/api/payments/recruiter", headers=recruiter_auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 1
-        assert float(data[0]["amount"]) == 2500.00
+        items = data["items"]
+        assert len(items) >= 1
+        assert float(items[0]["amount"]) == 2500.00
 
     def test_update_recruiter_payment_status(
         self,

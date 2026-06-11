@@ -38,6 +38,9 @@ env/
 .env.local
 .env.*.local
 
+# Google service account keys (never commit)
+**/service_account.json
+
 # Testing
 .pytest_cache/
 .coverage

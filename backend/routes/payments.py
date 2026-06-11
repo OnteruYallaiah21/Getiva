@@ -9,9 +9,14 @@ from ..models import (
     StudentPayment, RecruiterPayment, User, UserRole, Student, Recruiter, PaymentStatus
 )
 from ..schemas import (
-    StudentPaymentCreate, StudentPaymentUpdate, StudentPaymentResponse,
-    RecruiterPaymentCreate, RecruiterPaymentUpdate, RecruiterPaymentResponse,
-    PaymentListResponse
+    StudentPaymentCreate,
+    StudentPaymentUpdate,
+    StudentPaymentResponse,
+    RecruiterPaymentCreate,
+    RecruiterPaymentUpdate,
+    RecruiterPaymentResponse,
+    StudentPaymentListResponse,
+    RecruiterPaymentListResponse,
 )
 from .auth import get_current_user, require_role
 
@@ -48,7 +53,7 @@ def create_student_payment(
     return db_payment
 
 
-@router.get("/student", response_model=PaymentListResponse)
+@router.get("/student", response_model=StudentPaymentListResponse)
 def list_student_payments(
     student_id: UUID = Query(None),
     status: PaymentStatus = Query(None),
@@ -159,7 +164,7 @@ def create_recruiter_payment(
     return db_payment
 
 
-@router.get("/recruiter", response_model=PaymentListResponse)
+@router.get("/recruiter", response_model=RecruiterPaymentListResponse)
 def list_recruiter_payments(
     recruiter_id: UUID = Query(None),
     status: PaymentStatus = Query(None),
@@ -175,6 +180,8 @@ def list_recruiter_payments(
     # Role-based filtering
     if current_user.role == UserRole.RECRUITER:
         recruiter = db.query(Recruiter).filter(Recruiter.user_id == current_user.id).first()
+        if not recruiter:
+            raise HTTPException(status_code=403, detail="Recruiter profile not found")
         query = query.filter(RecruiterPayment.recruiter_id == recruiter.id)
     elif recruiter_id:
         query = query.filter(RecruiterPayment.recruiter_id == recruiter_id)

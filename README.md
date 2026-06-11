@@ -1,7 +1,7 @@
 # GETIVA - Job Application Tracking Platform
 
 <div align="center">
-  <img src="frontend/public/images/logo.png" alt="GETIVA Logo" width="150" height="150">
+  <img src="frontend/public/images/getiva.png" alt="GETIVA" width="150" height="150">
   
   **We'll store it for you**
 </div>
@@ -44,7 +44,7 @@ Getiva/
 
 ## Logo
 
-Place the GETIVA logo image at: `frontend/public/images/logo.png`
+Place the GETIVA mark at: `frontend/public/images/getiva.png` (source: `frontend/getiva.png`).
 
 The logo should be a square image (PNG format recommended) with the GETIVA branding.
 
@@ -140,8 +140,7 @@ python -c "from database import engine, Base; Base.metadata.create_all(bind=engi
 ### Backend API
 
 ```bash
-# From backend directory (with venv activated)
-python main.py
+# From backend directory (with venv activ
 ```
 
 The API will be available at: `http://localhost:8000`

@@ -1,0 +1,126 @@
+/* ============================================
+   GETIVA — global dark SaaS design tokens
+   Black-first UI, purple brand, role-colored labels
+   Load before page-specific CSS (after design-system.css)
+   ============================================ */
+
+:root {
+    /* Surfaces (spec) */
+    --gv-bg: #0b0f14;
+    --gv-card: #111827;
+    --gv-border: #1f2937;
+
+    /* Typography */
+    --gv-text: #e5e7eb;
+    --gv-text-soft: #d1d5db;
+    --gv-muted: #9ca3af;
+
+    /* Brand accent (single primary) */
+    --gv-primary: #8b5cf6;
+    --gv-primary-dark: #7c3aed;
+    --gv-primary-glow: rgba(139, 92, 246, 0.22);
+
+    /* Secondary accent (data / links) */
+    --gv-cyan: #06b6d4;
+
+    /* Role identity */
+    --gv-role-admin: #facc15;
+    --gv-role-recruiter: #3b82f6;
+    --gv-role-student: #22c55e;
+
+    /* Semantic */
+    --gv-success: #22c55e;
+    --gv-warning: #fbbf24;
+    --gv-danger: #f87171;
+
+    /* Layout */
+    --gv-sidebar-w: 288px;
+    --gv-radius: 14px;
+    --gv-radius-sm: 10px;
+    --gv-radius-pill: 999px;
+    --gv-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    --gv-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Glass / layers */
+    --gv-surface: rgba(17, 24, 39, 0.88);
+    --gv-surface-solid: #111827;
+    --gv-bg-elevated: #0d1117;
+    --gv-border-accent: rgba(139, 92, 246, 0.35);
+
+    /* ---------- admin bundle aliases (admin-styles.css) ---------- */
+    --adm-bg-deep: var(--gv-bg);
+    --adm-bg-elevated: var(--gv-bg-elevated);
+    --adm-surface: var(--gv-surface);
+    --adm-surface-solid: var(--gv-surface-solid);
+    --adm-border: var(--gv-border);
+    --adm-border-strong: var(--gv-border-accent);
+    --adm-text: var(--gv-text);
+    --adm-text-soft: var(--gv-text-soft);
+    --adm-text-muted: var(--gv-muted);
+    --adm-violet: var(--gv-primary);
+    --adm-violet-deep: var(--gv-primary-dark);
+    --adm-cyan: var(--gv-cyan);
+    --adm-mint: var(--gv-success);
+    --adm-amber: var(--gv-warning);
+    --adm-rose: var(--gv-danger);
+    --adm-sidebar-w: var(--gv-sidebar-w);
+    --adm-radius: var(--gv-radius);
+    --adm-radius-sm: var(--gv-radius-sm);
+    --adm-shadow: var(--gv-shadow);
+    --adm-transition: var(--gv-transition);
+}
+
+/* ---------- Role pill labels (use in tables / headers) ---------- */
+
+.label-role {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.65rem;
+    border-radius: var(--gv-radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: capitalize;
+    border: 1px solid transparent;
+    line-height: 1.2;
+}
+
+.label-role-admin {
+    background: rgba(250, 204, 21, 0.14);
+    color: var(--gv-role-admin);
+    border-color: rgba(250, 204, 21, 0.32);
+}
+
+.label-role-recruiter {
+    background: rgba(59, 130, 246, 0.14);
+    color: var(--gv-role-recruiter);
+    border-color: rgba(59, 130, 246, 0.32);
+}
+
+.label-role-student {
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--gv-role-student);
+    border-color: rgba(34, 197, 94, 0.32);
+}
+
+/* Legacy: admin users table used status-badge + status-{role} */
+.status-badge.status-admin {
+    background: rgba(250, 204, 21, 0.14);
+    color: var(--gv-role-admin);
+    border: 1px solid rgba(250, 204, 21, 0.32);
+    border-radius: var(--gv-radius-pill);
+}
+
+.status-badge.status-recruiter {
+    background: rgba(59, 130, 246, 0.14);
+    color: var(--gv-role-recruiter);
+    border: 1px solid rgba(59, 130, 246, 0.32);
+    border-radius: var(--gv-radius-pill);
+}
+
+.status-badge.status-student {
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--gv-role-student);
+    border: 1px solid rgba(34, 197, 94, 0.32);
+    border-radius: var(--gv-radius-pill);
+}

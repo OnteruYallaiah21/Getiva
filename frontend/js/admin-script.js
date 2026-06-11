@@ -3,7 +3,9 @@
    ============================================ */
 
 // Configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL =
+    (typeof localStorage !== 'undefined' && localStorage.getItem('apiBaseUrl')) ||
+    `${window.location.origin}/api`;
 let authToken = localStorage.getItem('authToken');
 
 // State management
@@ -47,12 +49,38 @@ async function initializeApp() {
 
 async function loadCurrentUser() {
     try {
-        // For now, get user info from token or make an API call
-        state.currentUser = {
-            username: 'Admin User',
-            role: 'admin',
-        };
-        document.getElementById('userName').textContent = state.currentUser.username;
+        const r = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (r.status === 401) {
+            redirectToLogin();
+            return;
+        }
+        if (!r.ok) {
+            throw new Error('Could not load profile');
+        }
+        const u = await r.json();
+
+        if (u.role !== 'admin') {
+            localStorage.setItem('userRole', u.role);
+            if (u.role === 'student') {
+                window.location.href = 'student-dashboard.html';
+            } else if (u.role === 'recruiter') {
+                window.location.href = 'recruiter-dashboard.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+            return;
+        }
+
+        if (u.is_temp_password) {
+            localStorage.setItem('mustChangePassword', 'true');
+            window.location.href = 'change-password.html';
+            return;
+        }
+
+        state.currentUser = u;
+        document.getElementById('userName').textContent = u.username;
     } catch (error) {
         console.error('Failed to load user:', error);
         redirectToLogin();
@@ -60,7 +88,7 @@ async function loadCurrentUser() {
 }
 
 function redirectToLogin() {
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
 }
 
 // ============================================
@@ -77,6 +105,13 @@ function setupEventListeners() {
         });
     });
 
+    document.querySelectorAll('[data-section-jump]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchSection(btn.getAttribute('data-section-jump'));
+        });
+    });
+
     // Logout button
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
@@ -84,6 +119,17 @@ function setupEventListeners() {
     document.getElementById('addUserBtn')?.addEventListener('click', openUserModal);
     document.querySelector('.close-btn')?.addEventListener('click', closeUserModal);
     document.getElementById('userForm')?.addEventListener('submit', handleAddUser);
+
+    document.getElementById('resetPasswordForm')?.addEventListener('submit', handleResetPasswordSubmit);
+    document.getElementById('closeResetPwModal')?.addEventListener('click', closeResetPasswordModal);
+    document.getElementById('cancelResetPw')?.addEventListener('click', closeResetPasswordModal);
+
+    document.getElementById('closeCredentialShareModal')?.addEventListener('click', closeCredentialShareModal);
+    document.getElementById('dismissCredentialShare')?.addEventListener('click', closeCredentialShareModal);
+    document.getElementById('copyCredentialsBtn')?.addEventListener('click', copySharedCredentials);
+
+    document.getElementById('uploadDocBtn')?.addEventListener('click', handleAdminDocumentUpload);
+    document.getElementById('reloadLandingPreview')?.addEventListener('click', reloadLandingPreview);
 
     // Payment tabs
     document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -121,10 +167,12 @@ function switchSection(sectionName) {
     const titles = {
         dashboard: 'Dashboard',
         users: 'User Management',
+        documents: 'Document storage',
         applications: 'Applications',
         payments: 'Payments',
         analytics: 'Analytics',
         reports: 'Reports',
+        landing: 'Landing Page',
     };
     document.getElementById('pageTitle').textContent = titles[sectionName] || 'Dashboard';
 
@@ -168,6 +216,9 @@ async function loadSectionData(sectionName) {
         case 'users':
             await loadUsers();
             break;
+        case 'documents':
+            await loadAdminDocuments();
+            break;
         case 'applications':
             await loadApplications();
             break;
@@ -180,7 +231,16 @@ async function loadSectionData(sectionName) {
         case 'reports':
             // Reports data is generated on demand
             break;
+        case 'landing':
+            reloadLandingPreview();
+            break;
     }
+}
+
+function reloadLandingPreview() {
+    const frame = document.getElementById('landingOldFrame');
+    if (!frame) return;
+    frame.src = '/index-old.html';
 }
 
 async function loadDashboardData() {
@@ -247,12 +307,85 @@ async function loadRecentApplications() {
                 <td>${app.company_name}</td>
                 <td>${app.job_title}</td>
                 <td><span class="status-badge status-${app.status}">${app.status}</span></td>
-                <td>${new Date(app.applied_date).toLocaleDateString()}</td>
+                <td>${formatDateTime(app.applied_date)}</td>
             `;
             tbody.appendChild(row);
         });
     } catch (error) {
         console.error('Failed to load recent applications:', error);
+    }
+}
+
+async function loadAdminDocuments() {
+    const tbody = document.getElementById('documentsTable');
+    if (!tbody) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/files/admin/documents`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch documents');
+        }
+        const items = await response.json();
+        tbody.innerHTML = '';
+        if (!items.length) {
+            tbody.innerHTML =
+                '<tr><td colspan="4" class="empty">No documents yet. Upload a file — it goes to Supabase; the URL is stored in Neon.</td></tr>';
+            return;
+        }
+        items.forEach((doc) => {
+            const row = document.createElement('tr');
+            const link = doc.storage_url.replace(/"/g, '&quot;');
+            row.innerHTML = `
+                <td>${doc.title || '—'}</td>
+                <td>${doc.file_name}</td>
+                <td><a href="${link}" target="_blank" rel="noopener noreferrer">Open</a></td>
+                <td>${new Date(doc.created_at).toLocaleString()}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Failed to load documents:', error);
+        tbody.innerHTML =
+            '<tr><td colspan="4" class="empty">Failed to load documents. Check Supabase env and migration.</td></tr>';
+    }
+}
+
+async function handleAdminDocumentUpload() {
+    const titleEl = document.getElementById('docTitle');
+    const fileInput = document.getElementById('docFile');
+    if (!fileInput?.files?.length) {
+        showToast('Choose a file first', 'error');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    const t = (titleEl?.value || '').trim();
+    if (t) {
+        fd.append('title', t);
+    }
+    const btn = document.getElementById('uploadDocBtn');
+    btn.disabled = true;
+    try {
+        const response = await fetch(`${API_BASE_URL}/files/admin/documents`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${authToken}` },
+            body: fd,
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            showToast(typeof err.detail === 'string' ? err.detail : 'Upload failed', 'error');
+            return;
+        }
+        showToast('File stored in Supabase; URL saved in Neon', 'success');
+        if (titleEl) titleEl.value = '';
+        fileInput.value = '';
+        await loadAdminDocuments();
+    } catch (error) {
+        console.error(error);
+        showToast('Upload failed', 'error');
+    } finally {
+        btn.disabled = false;
     }
 }
 
@@ -292,11 +425,12 @@ function displayUsers(users) {
         row.innerHTML = `
             <td>${user.username}</td>
             <td>${user.email}</td>
-            <td><span class="status-badge status-${user.role}">${user.role}</span></td>
+            <td><span class="label-role label-role-${user.role}">${user.role}</span></td>
             <td>${user.is_active ? '<span class="status-badge status-completed">Active</span>' : '<span class="status-badge status-rejected">Inactive</span>'}</td>
-            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+            <td>${formatDateTime(user.created_at)}</td>
             <td>
                 <button class="action-btn" onclick="editUser('${user.id}')">Edit</button>
+                <button class="action-btn" onclick="window.openResetPasswordModal('${user.id}')">Reset password</button>
                 <button class="action-btn" onclick="toggleUserStatus('${user.id}')">Toggle</button>
             </td>
         `;
@@ -315,7 +449,7 @@ async function loadApplications(page = 1) {
         tbody.innerHTML = '';
 
         if (data.items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty">No applications found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">No applications found</td></tr>';
             return;
         }
 
@@ -327,7 +461,8 @@ async function loadApplications(page = 1) {
                 <td>${app.job_title}</td>
                 <td>${app.recruiter_id.substring(0, 8)}...</td>
                 <td><span class="status-badge status-${app.status}">${app.status}</span></td>
-                <td>${new Date(app.applied_date).toLocaleDateString()}</td>
+                <td>${formatDateTime(app.applied_date)}</td>
+                <td>${buildResumeLinksHtml(app.resume_url, app.id)}</td>
                 <td>
                     <button class="action-btn" onclick="updateApplicationStatus('${app.id}')">Update</button>
                 </td>
@@ -339,7 +474,7 @@ async function loadApplications(page = 1) {
     } catch (error) {
         console.error('Failed to load applications:', error);
         document.getElementById('applicationsTable').innerHTML =
-            '<tr><td colspan="7" class="empty">Failed to load applications</td></tr>';
+            '<tr><td colspan="8" class="empty">Failed to load applications</td></tr>';
     }
 }
 
@@ -365,7 +500,7 @@ async function loadStudentPayments() {
                 <td>$${payment.amount}</td>
                 <td>${payment.payment_type}</td>
                 <td><span class="status-badge status-${payment.status}">${payment.status}</span></td>
-                <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
+                <td>${formatDateTime(payment.payment_date)}</td>
                 <td>
                     <button class="action-btn" onclick="updatePaymentStatus('${payment.id}', 'student')">Update</button>
                 </td>
@@ -399,7 +534,7 @@ async function loadRecruiterPayments() {
                 <td>$${payment.amount}</td>
                 <td>${payment.salary_month}</td>
                 <td><span class="status-badge status-${payment.status}">${payment.status}</span></td>
-                <td>${new Date(payment.payment_date).toLocaleDateString()}</td>
+                <td>${formatDateTime(payment.payment_date)}</td>
                 <td>
                     <button class="action-btn" onclick="updatePaymentStatus('${payment.id}', 'recruiter')">Update</button>
                 </td>
@@ -464,16 +599,39 @@ function closeUserModal() {
 async function handleAddUser(e) {
     e.preventDefault();
 
+    const username = document.getElementById('username').value.trim();
+    const plainPassword = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+
+    if (username.length < 3) {
+        showToast('Username must be at least 3 characters', 'error');
+        return;
+    }
+    if (plainPassword.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+    }
+    if (!role) {
+        showToast('Choose a role (student, recruiter, or admin)', 'error');
+        return;
+    }
+
     const userData = {
-        username: document.getElementById('username').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        role: document.getElementById('role').value,
-        full_name: document.getElementById('fullName').value,
+        username,
+        password: plainPassword,
+        role,
     };
+    const email = document.getElementById('email').value.trim();
+    if (email) {
+        userData.email = email;
+    }
+    const fullName = document.getElementById('fullName').value.trim();
+    if (fullName) {
+        userData.full_name = fullName;
+    }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        const response = await fetch(`${API_BASE_URL}/auth/users`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -483,12 +641,20 @@ async function handleAddUser(e) {
         });
 
         if (response.ok) {
-            showToast('User created successfully', 'success');
+            const createdUsername = userData.username;
             closeUserModal();
+            showToast('User created', 'success');
+            showCredentialShareModal(createdUsername, plainPassword);
             await loadUsers();
         } else {
-            const error = await response.json();
-            showToast(error.detail || 'Failed to create user', 'error');
+            let msg = 'Failed to create user';
+            try {
+                const error = await response.json();
+                msg = formatApiDetail(error.detail) || msg;
+            } catch {
+                msg = `Failed (${response.status})`;
+            }
+            showToast(msg, 'error');
         }
     } catch (error) {
         console.error('Error creating user:', error);
@@ -496,9 +662,79 @@ async function handleAddUser(e) {
     }
 }
 
+function showCredentialShareModal(username, password) {
+    document.getElementById('shareCredUsername').value = username;
+    document.getElementById('shareCredPassword').value = password;
+    document.getElementById('credentialShareModal').classList.add('active');
+}
+
+function closeCredentialShareModal() {
+    document.getElementById('shareCredPassword').value = '';
+    document.getElementById('credentialShareModal').classList.remove('active');
+}
+
+async function copySharedCredentials() {
+    const u = document.getElementById('shareCredUsername').value;
+    const p = document.getElementById('shareCredPassword').value;
+    const text = `Username: ${u}\nPassword: ${p}`;
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copied to clipboard', 'success');
+    } catch {
+        showToast('Copy failed — select and copy manually', 'error');
+    }
+}
+
+window.openResetPasswordModal = function openResetPasswordModal(userId) {
+    const u = state.users.find((x) => x.id === userId);
+    document.getElementById('resetPwUserId').value = userId;
+    document.getElementById('resetPwUsername').textContent = u ? u.username : userId;
+    document.getElementById('resetPwNew').value = '';
+    document.getElementById('resetPwConfirm').value = '';
+    document.getElementById('resetPasswordModal').classList.add('active');
+};
+
+function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').classList.remove('active');
+}
+
+async function handleResetPasswordSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('resetPwUserId').value;
+    const profile = state.users.find((x) => x.id === id);
+    const uname = profile ? profile.username : id;
+    const p1 = document.getElementById('resetPwNew').value;
+    const p2 = document.getElementById('resetPwConfirm').value;
+    if (p1 !== p2) {
+        showToast('Passwords do not match', 'error');
+        return;
+    }
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/users/${id}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({ new_password: p1 }),
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            showToast(typeof err.detail === 'string' ? err.detail : 'Reset failed', 'error');
+            return;
+        }
+        closeResetPasswordModal();
+        showCredentialShareModal(uname, p1);
+        await loadUsers();
+    } catch (err) {
+        console.error(err);
+        showToast('Reset failed', 'error');
+    }
+}
+
 async function toggleUserStatus(userId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/toggle-status`, {
+        const response = await fetch(`${API_BASE_URL}/auth/users/${userId}/toggle-status`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${authToken}` },
         });
@@ -696,6 +932,30 @@ function displayPagination(data, elementId, loadMoreCallback) {
         button.addEventListener('click', () => loadMoreCallback(i));
         container.appendChild(button);
     }
+}
+
+/** Turn FastAPI / Pydantic error bodies into a readable string (avoids "[object Object]"). */
+function formatApiDetail(detail) {
+    if (detail == null) return 'Request failed';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+        return detail
+            .map((item) => {
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') {
+                    const loc = Array.isArray(item.loc) ? item.loc.filter((p) => p !== 'body').join('.') : '';
+                    const msg = item.msg || item.message || '';
+                    return loc ? `${loc}: ${msg}` : msg || JSON.stringify(item);
+                }
+                return String(item);
+            })
+            .filter(Boolean)
+            .join(' · ');
+    }
+    if (typeof detail === 'object') {
+        return detail.msg || detail.message || JSON.stringify(detail);
+    }
+    return String(detail);
 }
 
 function showToast(message, type = 'info') {

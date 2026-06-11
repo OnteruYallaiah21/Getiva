@@ -3,8 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from models import Student, Recruiter, Application, ApplicationStatus, UserRole
-from schemas import ApplicationCreate
+from models import User, Student, Recruiter, Application, ApplicationStatus, UserRole
 
 
 class TestCreateApplication:
@@ -17,10 +16,11 @@ class TestCreateApplication:
         recruiter_auth_headers: dict,
         create_test_user,
     ):
-        """Test recruiter creating an application."""
-        recruiter_user = create_test_user(role=UserRole.RECRUITER)
-        recruiter = Recruiter(user_id=recruiter_user.id, name="John Recruiter")
-        db.add(recruiter)
+        """Test recruiter creating an application (matches fixture recruiter user)."""
+        recruiter_user = db.query(User).filter(User.username == "recruiter").first()
+        assert recruiter_user is not None
+        recruiter = db.query(Recruiter).filter(Recruiter.user_id == recruiter_user.id).first()
+        assert recruiter is not None
 
         student_user = create_test_user(
             username="student", email="student@example.com", role=UserRole.STUDENT
@@ -48,6 +48,42 @@ class TestCreateApplication:
         assert data["job_title"] == app_data["job_title"]
         assert data["status"] == ApplicationStatus.APPLIED.value
 
+    def test_create_application_omits_student_when_only_one(
+        self,
+        client: TestClient,
+        db: Session,
+        recruiter_auth_headers: dict,
+        create_test_user,
+    ):
+        """Recruiter may omit student_id when exactly one active student exists."""
+        recruiter_user = db.query(User).filter(User.username == "recruiter").first()
+        assert recruiter_user is not None
+        recruiter = db.query(Recruiter).filter(Recruiter.user_id == recruiter_user.id).first()
+        assert recruiter is not None
+
+        student_user = create_test_user(
+            username="onlystudent", email="only@example.com", role=UserRole.STUDENT
+        )
+        student = Student(user_id=student_user.id, full_name="Only Student")
+        db.add(student)
+        db.commit()
+
+        app_data = {
+            "company_name": "SoloCorp",
+            "job_description": "Full description of the role.",
+        }
+
+        response = client.post(
+            "/api/applications",
+            json=app_data,
+            headers=recruiter_auth_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["company_name"] == "SoloCorp"
+        assert data["job_title"] == "SoloCorp"
+        assert data["student_id"] == str(student.id)
+
     def test_create_application_student_forbidden(
         self,
         client: TestClient,
@@ -65,6 +101,7 @@ class TestCreateApplication:
             "student_id": str(student.id),
             "company_name": "TechCorp",
             "job_title": "Software Engineer",
+            "job_description": "Role details for the listing.",
         }
 
         response = client.post(

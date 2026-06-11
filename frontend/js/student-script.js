@@ -3,7 +3,9 @@
    ============================================ */
 
 // Configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL =
+    (typeof localStorage !== 'undefined' && localStorage.getItem('apiBaseUrl')) ||
+    `${window.location.origin}/api`;
 let authToken = localStorage.getItem('authToken');
 
 // State management
@@ -61,7 +63,7 @@ async function loadCurrentUser() {
 }
 
 function redirectToLogin() {
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
 }
 
 // ============================================
@@ -278,7 +280,7 @@ function displayRecentActivity() {
             <div class="activity-details">
                 <div class="activity-company">${app.company_name}</div>
                 <div class="activity-status">${app.job_title} - <strong>${app.status}</strong></div>
-                <div class="activity-date">${new Date(app.applied_date).toLocaleDateString()}</div>
+                <div class="activity-date">${formatDateTime(app.applied_date)}</div>
             </div>
         `;
         container.appendChild(div);
@@ -308,10 +310,11 @@ function displayApplications(applications) {
                 <span class="app-status status-${app.status}">${app.status}</span>
             </div>
             <div class="app-meta">
-                <span>${new Date(app.applied_date).toLocaleDateString()}</span>
+                <span>${formatDateTime(app.applied_date)}</span>
                 <span>via ${app.recruiter_id.substring(0, 8)}</span>
             </div>
             <div class="app-footer">
+                ${app.resume_url ? buildResumeLinksHtml(app.resume_url, app.id) : ''}
                 <button class="app-btn" onclick="viewApplicationDetails('${app.id}')">Details</button>
                 <button class="app-btn" onclick="editApplicationStatus('${app.id}')">Update</button>
             </div>
@@ -479,7 +482,7 @@ function viewApplicationDetails(appId) {
             </div>
             <div>
                 <label style="font-weight: 600; color: var(--text-secondary);">Applied Date</label>
-                <p>${new Date(app.applied_date).toLocaleDateString()}</p>
+                <p>${formatDateTime(app.applied_date)}</p>
             </div>
             ${app.job_description ? `
                 <div>
@@ -493,6 +496,10 @@ function viewApplicationDetails(appId) {
                     <p>${app.notes}</p>
                 </div>
             ` : ''}
+            <div>
+                <label style="font-weight: 600; color: var(--text-secondary);">Resume</label>
+                <p>${app.resume_url ? buildResumeLinksHtml(app.resume_url, app.id) : 'No resume attached'}</p>
+            </div>
         </div>
     `;
     document.getElementById('applicationModal').classList.add('active');
